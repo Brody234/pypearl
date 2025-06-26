@@ -30,3 +30,43 @@ venv/
 # Mac/Linux system files
 .DS_Store
 Thumbs.db
+#Matrix Stuff
+src/matrix/testcode.cpp
+src/matrix/testcode
+src/matrix/testcode.dSYM
+src/matrix/Makefile
+
+#Neural Network Stuff
+src/neuralnetwork/.vscode/
+src/neuralnetwork/testcode.cpp
+src/neuralnetwork/testcode
+src/neuralnetwork/testcode.dSYM/
+src/neuralnetwork/samplecode
+src/neuralnetwork/samplecode.dSYM/
+src/neuralnetwork/tutorial
+src/neuralnetwork/tutorial.dSYM/
+src/neuralnetwork/oldtests.txt
+src/neuralnetwork/wrongcce.txt
+
+#Decision Tree Stuff
+src/decisiontree/testcode.cpp
+
+#Node Stuff
+/.vscode/
+/node_modules/
+src/.vscode/ 
+.vscode/
+/nodejs/build/
+/nodejs/node_modules/
+
+#Build Stuff
+/cppmake/objects
+/cppmake/libcognivial.a
+/cppmake/Cognivial/
+/cppmake/libpearl.a
+/cppmake/Pearl/
+.DS_Store
+pybind11/
+pybound/
+CMakeLists.txt
+cppmake/
