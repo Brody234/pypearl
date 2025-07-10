@@ -1,6 +1,7 @@
 #include <Python.h>
 #include "../matrix/matrix.hpp"
 
+// For anyone trying to understand this file, start by following it for a 1d and 2d double array, once you get that you'll understand the whole thing.
 
 // Double Arrays
 using ArrayD1 = Array<double, 1>;
@@ -169,10 +170,12 @@ PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds)
 
 // --- 1-D type definition ----------------------------------------
 static PyMethodDef PyArrayD1_methods[] = {
+    {"length", (PyCFunction)PyArrayD1_length, METH_NOARGS, "Return number of elements"},
     {NULL, NULL, 0, NULL}
 };
 
 static PyGetSetDef PyArrayD1_getset[] = {
+    {"ndim", (getter)PyArrayD1_get_ndim, NULL, "Number of dimensions", NULL},
     {NULL, NULL, NULL, NULL, NULL}
 };
 
@@ -191,11 +194,12 @@ static PyTypeObject PyArrayD1Type = {
 
 // --- 2-D type definition ----------------------------------------
 static PyMethodDef PyArrayD2_methods[] = {
-    
+    {"length", (PyCFunction)PyArrayD2_length, METH_NOARGS, "Return total element count"},
     {NULL, NULL, 0, NULL}
 };
 
 static PyGetSetDef PyArrayD2_getset[] = {
+    {"ndim", (getter)PyArrayD2_get_ndim, NULL, "Number of dimensions", NULL},
     {NULL, NULL, NULL, NULL, NULL}
 };
 
@@ -211,51 +215,3 @@ static PyTypeObject PyArrayD2Type = {
     .tp_new       = PyArrayD2_new,
     .tp_init      = (initproc)PyArrayD2_init,
 };
-
-PyObject *add(PyObject *self, PyObject *args){
-    int x;
-    int y;
-
-    PyArg_ParseTuple(args, "ii", &x, &y);
-
-    return PyLong_FromLong(((long)(x-y)));
-};
-
-static PyMethodDef methods[] {
-    {"add", add, METH_VARARGS, "Adds two numbers together"},
-    {NULL, NULL, 0, NULL}
-};
-
-static struct PyModuleDef pypearl = {
-    PyModuleDef_HEAD_INIT,
-    "pypearl",
-    "Documentation: To be implemented, as a safeguard if this is somehow still in place August 2025 or later, please contact me.",
-    -1,
-    methods
-};
-
-PyMODINIT_FUNC
-PyInit_pypearl(void)
-{
-    PyObject *m = PyModule_Create(&pypearl);
-    if (!m) return NULL;
-
-    // --- register ArrayD1 ---
-    if (PyType_Ready(&PyArrayD1Type) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    Py_INCREF(&PyArrayD1Type);
-    PyModule_AddObject(m, "ArrayD1", (PyObject*)&PyArrayD1Type);
-
-    // --- register ArrayD2 ---
-    if (PyType_Ready(&PyArrayD2Type) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    Py_INCREF(&PyArrayD2Type);
-    PyModule_AddObject(m, "ArrayD2", (PyObject*)&PyArrayD2Type);
-
-    return m;
-}
-
