@@ -1,7 +1,7 @@
 import sys
 import os
 import subprocess
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -28,7 +28,7 @@ else:
 
 ext_modules = [
     Extension(
-        name="pypearl",
+        name="pypearl._pypearl",
         sources=[
             "src/pybinding/binding.cpp",
         ],
@@ -45,14 +45,19 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.3.1",
+    version="0.4.6",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
-    description="C++ bindings for pypearl",
+    description="C/C++ bindings for pypearl",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
+    packages=find_packages(),
+    package_data={
+        "pypearl": ["*.pyi", "py.typed"],
+    },
+    include_package_data=True,
     zip_safe=False,
     python_requires=">=3.7",
 )

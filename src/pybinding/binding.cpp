@@ -1,174 +1,14 @@
 #include <Python.h>
 #include "../matrix/matrix.hpp"
-
-
-// Double Arrays
-using ArrayD1 = Array<double, 1>;
-using ArrayD2 = Array<double, 2>;
-
-// Float Arrays
-using ArrayF1 = Array<float, 1>;
-using ArrayF2 = Array<float, 2>;
-
-// Int Arrays
-using ArrayI1 = Array<int, 1>;
-using ArrayI2 = Array<int, 2>;
-
-// Long Arrays
-using ArrayL1 = Array<long, 1>;
-using ArrayL2 = Array<long, 2>;
-
-// Py Objects
-
-// Double Py Objects
-
-typedef struct {
-  PyObject_HEAD
-  ArrayD1 *cpp_obj;
-} PyArrayD1Object;
-
-typedef struct {
-  PyObject_HEAD
-  ArrayD2 *cpp_obj;
-} PyArrayD2Object;
-
-
-// Float Py Objects
-
-typedef struct {
-  PyObject_HEAD
-  ArrayF1 *cpp_obj;
-} PyArrayF1Object;
-
-typedef struct {
-  PyObject_HEAD
-  ArrayF2 *cpp_obj;
-} PyArrayF2Object;
-
-
-// Int Py Objects
-
-typedef struct {
-  PyObject_HEAD
-  ArrayI1 *cpp_obj;
-} PyArrayI1Object;
-
-typedef struct {
-  PyObject_HEAD
-  ArrayI2 *cpp_obj;
-} PyArrayI2Object;
-
-
-// Long Py Objects
-
-typedef struct {
-  PyObject_HEAD
-  ArrayL1 *cpp_obj;
-} PyArrayL1Object;
-
-typedef struct {
-  PyObject_HEAD
-  ArrayL2 *cpp_obj;
-} PyArrayL2Object;
-
-
-// Function Declarations
-
-// Double 1D
-static void PyArrayD1_dealloc(PyArrayD1Object *self);
-static PyObject* PyArrayD1_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-static int PyArrayD1_init(PyArrayD1Object *self, PyObject *args, PyObject *kwds);
-static PyObject* PyArrayD1_length(PyArrayD1Object *self, PyObject * /*unused*/);
-static PyObject* PyArrayD1_get_ndim(PyArrayD1Object *self, void *);
-
-// Double 2D
-static void PyArrayD2_dealloc(PyArrayD2Object *self);
-static PyObject* PyArrayD2_new(PyArrayD2Object *type, PyObject *args, PyObject *kwds);
-static int PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds);
-static PyObject* PyArrayD2_length(PyArrayD2Object *self, PyObject * /*unused*/);
-static PyObject* PyArrayD2_get_ndim(PyArrayD2Object *self, void *);
-
-// --- Deallocate: deletes C++ object, then frees the Python object
-static void
-PyArrayD1_dealloc(PyArrayD1Object *self)
-{
-    // 1) delete the C++ array
-    delete self->cpp_obj;
-    // 2) free the Python wrapper
-    Py_TYPE(self)->tp_free((PyObject*)self);
-}
-
-// --- New: allocates the Python object, sets cpp_obj to nullptr
-static PyObject *
-PyArrayD1_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyArrayD1Object *self = (PyArrayD1Object*)type->tp_alloc(type, 0);
-    if (self) {
-        self->cpp_obj = nullptr;
-    }
-    return (PyObject*)self;
-}
-
-// --- Init: called after new; parse “size” and construct the C++ ArrayD1
-static int
-PyArrayD1_init(PyArrayD1Object *self, PyObject *args, PyObject *kwds)
-{
-    Py_ssize_t size;
-    static char *kwlist[] = { (char*)"size", nullptr };
-    // require one integer argument: size
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n", kwlist, &size))
-        return -1;
-
-    try {
-        // allocate your C++ object
-        self->cpp_obj = new ArrayD1((size_t)size);
-    } catch (const std::exception &e) {
-        PyErr_SetString(PyExc_RuntimeError, e.what());
-        return -1;
-    }
-    return 0;
-}
-
-static void
-PyArrayD2_dealloc(PyArrayD2Object *self)
-{
-    delete self->cpp_obj;
-    Py_TYPE(self)->tp_free((PyObject*)self);
-}
-
-static PyObject *
-PyArrayD2_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyArrayD2Object *self = (PyArrayD2Object*)type->tp_alloc(type, 0);
-    if (self) {
-        self->cpp_obj = nullptr;
-    }
-    return (PyObject*)self;
-}
-
-static int
-PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds)
-{
-    Py_ssize_t rows, cols;
-    static char *kwlist[] = { (char*)"rows", (char*)"cols", nullptr };
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nn", kwlist, &rows, &cols))
-        return -1;
-
-    // build a two-element size array
-    std::size_t dims[2] = { static_cast<std::size_t>(rows),
-                            static_cast<std::size_t>(cols) };
-    try {
-        // call your Array<const size_t*> constructor
-        self->cpp_obj = new ArrayD2(dims);
-    } catch (const std::exception &e) {
-        PyErr_SetString(PyExc_RuntimeError, e.what());
-        return -1;
-    }
-    return 0;
-}
+#include "matrixbinding.hpp"
 
 // --- 1-D type definition ----------------------------------------
 static PyMethodDef PyArrayD1_methods[] = {
+    {"get", (PyCFunction)PyArrayD1_get, METH_VARARGS,
+     "get(index) -> float\n\n"
+     "Return the element at position `index` (0-based)."},
+     {"set", (PyCFunction)PyArrayD1_set, METH_VARARGS, "set(index)->float\n\n"
+     "Change the element at position index"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -188,6 +28,18 @@ static PyTypeObject PyArrayD1Type = {
     .tp_new       = PyArrayD1_new,
     .tp_init      = (initproc)PyArrayD1_init,
 };
+
+
+static PySequenceMethods PyArrayD1_as_sequence = {
+    /* sq_length    */ (lenfunc)         PyArrayD1_length,
+    /* sq_concat    */ 0,
+    /* sq_repeat    */ 0,
+    /* sq_item      */ (ssizeargfunc)    PyArrayD1_item,      // <— adapter
+    /* sq_slice     */ 0,
+    /* sq_ass_item  */ (ssizeobjargproc) PyArrayD1_ass_item,  // <— adapter
+    /* …rest zero… */
+};
+
 
 // --- 2-D type definition ----------------------------------------
 static PyMethodDef PyArrayD2_methods[] = {
@@ -218,7 +70,7 @@ PyObject *add(PyObject *self, PyObject *args){
 
     PyArg_ParseTuple(args, "ii", &x, &y);
 
-    return PyLong_FromLong(((long)(x-y)));
+    return PyLong_FromLong(((long)(x+y)));
 };
 
 static PyMethodDef methods[] {
@@ -235,10 +87,11 @@ static struct PyModuleDef pypearl = {
 };
 
 PyMODINIT_FUNC
-PyInit_pypearl(void)
+PyInit__pypearl(void)
 {
     PyObject *m = PyModule_Create(&pypearl);
     if (!m) return NULL;
+    PyArrayD1Type.tp_as_sequence = &PyArrayD1_as_sequence;
 
     // --- register ArrayD1 ---
     if (PyType_Ready(&PyArrayD1Type) < 0) {

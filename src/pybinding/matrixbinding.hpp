@@ -1,10 +1,99 @@
+#ifndef MATRIXBINDINGHPP
+#define MATRIXBINDINGHPP
 #include <Python.h>
 #include "../matrix/matrix.hpp"
+// Double Arrays
+using ArrayD1 = Array<double, 1>;
+using ArrayD2 = Array<double, 2>;
 
+// Float Arrays
+using ArrayF1 = Array<float, 1>;
+using ArrayF2 = Array<float, 2>;
+
+// Int Arrays
+using ArrayI1 = Array<int, 1>;
+using ArrayI2 = Array<int, 2>;
+
+// Long Arrays
+using ArrayL1 = Array<long, 1>;
+using ArrayL2 = Array<long, 2>;
+
+// Double Arrays
+typedef struct {
+  PyObject_HEAD
+  ArrayD1 *cpp_obj;
+} PyArrayD1Object;
+
+typedef struct {
+  PyObject_HEAD
+  ArrayD2 *cpp_obj;
+} PyArrayD2Object;
+
+
+// Float Py Objects
+
+typedef struct {
+  PyObject_HEAD
+  ArrayF1 *cpp_obj;
+} PyArrayF1Object;
+
+typedef struct {
+  PyObject_HEAD
+  ArrayF2 *cpp_obj;
+} PyArrayF2Object;
+
+
+// Int Py Objects
+
+typedef struct {
+  PyObject_HEAD
+  ArrayI1 *cpp_obj;
+} PyArrayI1Object;
+
+typedef struct {
+  PyObject_HEAD
+  ArrayI2 *cpp_obj;
+} PyArrayI2Object;
+
+
+// Long Py Objects
+
+typedef struct {
+  PyObject_HEAD
+  ArrayL1 *cpp_obj;
+} PyArrayL1Object;
+
+typedef struct {
+  PyObject_HEAD
+  ArrayL2 *cpp_obj;
+} PyArrayL2Object;
+
+// Double 1D
+static void PyArrayD1_dealloc(PyArrayD1Object *self);
+static PyObject* PyArrayD1_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static int PyArrayD1_init(PyArrayD1Object *self, PyObject *args, PyObject *kwds);
+static PyObject* PyArrayD1_set(PyArrayD1Object *self, PyObject *args);
+static PyObject* PyArrayD1_get(PyArrayD1Object *self, PyObject *args);
+static Py_ssize_t PyArrayD1_length(PyArrayD1Object *self, PyObject *args);
+static PyObject* PyArrayD1_get_ndim(PyArrayD1Object *self, void *);
+static PyObject* PyArrayD1_item(PyObject *self, Py_ssize_t idx);
+static int PyArrayD1_ass_item(PyObject *self, Py_ssize_t idx, PyObject *value);
+
+// Double 2D
+static void PyArrayD2_dealloc(PyArrayD2Object *self);
+static PyObject* PyArrayD2_new(PyArrayD2Object *type, PyObject *args, PyObject *kwds);
+static int PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds);
+static Py_ssize_t PyArrayD2_length(PyArrayD2Object *self, PyObject *args);
+static int PyArrayD2_ass_item(PyObject *self, PyObject *args, PyObject *value);
+static PyObject* PyArrayD2_get_ndim(PyArrayD2Object *self, void *);
+
+
+#include "matrixbinding.cpp"
+#endif
 // For anyone trying to understand this file, start by following it for a 1d and 2d double array, once you get that you'll understand the whole thing.
 
 // Double Arrays
-using ArrayD1 = Array<double, 1>;
+/*using ArrayD1 = Array<double, 1>;
 using ArrayD2 = Array<double, 2>;
 
 // Float Arrays
@@ -79,14 +168,14 @@ typedef struct {
 static void PyArrayD1_dealloc(PyArrayD1Object *self);
 static PyObject* PyArrayD1_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int PyArrayD1_init(PyArrayD1Object *self, PyObject *args, PyObject *kwds);
-static PyObject* PyArrayD1_length(PyArrayD1Object *self, PyObject * /*unused*/);
+static PyObject* PyArrayD1_length(PyArrayD1Object *self, PyObject *);
 static PyObject* PyArrayD1_get_ndim(PyArrayD1Object *self, void *);
 
 // Double 2D
 static void PyArrayD2_dealloc(PyArrayD2Object *self);
 static PyObject* PyArrayD2_new(PyArrayD2Object *type, PyObject *args, PyObject *kwds);
 static int PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds);
-static PyObject* PyArrayD2_length(PyArrayD2Object *self, PyObject * /*unused*/);
+static PyObject* PyArrayD2_length(PyArrayD2Object *self, PyObject * unused);
 static PyObject* PyArrayD2_get_ndim(PyArrayD2Object *self, void *);
 
 // --- Deallocate: deletes C++ object, then frees the Python object
@@ -215,3 +304,4 @@ static PyTypeObject PyArrayD2Type = {
     .tp_new       = PyArrayD2_new,
     .tp_init      = (initproc)PyArrayD2_init,
 };
+*/
