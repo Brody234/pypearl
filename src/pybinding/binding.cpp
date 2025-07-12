@@ -63,6 +63,12 @@ static PyTypeObject PyArrayD2Type = {
     .tp_new       = PyArrayD2_new,
     .tp_init      = (initproc)PyArrayD2_init,
 };
+static PyMappingMethods PyArrayD2_as_mapping = {
+    /* mp_length        */ (lenfunc)       PyArrayD2_length,       // len(x) → rows
+    /* mp_subscript     */ (binaryfunc)    PyArrayD2_item,         // x[key]
+    /* mp_ass_subscript */ (objobjargproc) PyArrayD2_ass_item,    // x[key] = val
+};
+
 
 PyObject *add(PyObject *self, PyObject *args){
     int x;
@@ -76,8 +82,8 @@ PyObject *add(PyObject *self, PyObject *args){
 static PyMethodDef methods[] {
     {"add", add, METH_VARARGS, "Adds two numbers together"},
     {NULL, NULL, 0, NULL}
-};
-
+}; 
+  
 static struct PyModuleDef pypearl = {
     PyModuleDef_HEAD_INIT,
     "pypearl",
@@ -100,7 +106,8 @@ PyInit__pypearl(void)
     }
     Py_INCREF(&PyArrayD1Type);
     PyModule_AddObject(m, "ArrayD1", (PyObject*)&PyArrayD1Type);
-
+ 
+    PyArrayD2Type.tp_as_mapping = &PyArrayD2_as_mapping;
     // --- register ArrayD2 ---
     if (PyType_Ready(&PyArrayD2Type) < 0) {
         Py_DECREF(m);
@@ -111,4 +118,4 @@ PyInit__pypearl(void)
 
     return m;
 }
-
+ 

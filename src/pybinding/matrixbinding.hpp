@@ -85,6 +85,7 @@ static PyObject* PyArrayD2_new(PyArrayD2Object *type, PyObject *args, PyObject *
 static int PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds);
 static Py_ssize_t PyArrayD2_length(PyArrayD2Object *self, PyObject *args);
 static int PyArrayD2_ass_item(PyObject *self, PyObject *args, PyObject *value);
+static PyObject* PyArrayD2_item(PyObject *self, PyObject *args);
 static PyObject* PyArrayD2_get_ndim(PyArrayD2Object *self, void *);
 
 

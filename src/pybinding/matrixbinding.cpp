@@ -156,10 +156,12 @@ PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds)
 
 static bool
 get_two_indices(PyObject *key, Py_ssize_t &i, Py_ssize_t &j) {
+
     if (!PyTuple_Check(key) || PyTuple_Size(key) != 2) {
         PyErr_SetString(PyExc_TypeError, "Index must be a tuple of two integers");
         return false;
     }
+
     PyObject *i_obj = PyTuple_GetItem(key, 0);
     PyObject *j_obj = PyTuple_GetItem(key, 1);
     i = PyNumber_AsSsize_t(i_obj, PyExc_IndexError);
@@ -171,13 +173,12 @@ get_two_indices(PyObject *key, Py_ssize_t &i, Py_ssize_t &j) {
 
 // __getitem__ for 2D
 static PyObject *
-PyArrayD2_subscript(PyObject *self, PyObject *key)
+PyArrayD2_item(PyObject *self, PyObject *args)
 {
     auto *obj = (PyArrayD2Object*)self;
     Py_ssize_t i, j;
-    if (!get_two_indices(key, i, j))
+    if (!get_two_indices(args, i, j))
         return NULL;
-
     // bounds check
     if (i < 0 || i >= (Py_ssize_t)obj->cpp_obj->shape[0] ||
         j < 0 || j >= (Py_ssize_t)obj->cpp_obj->shape[1]) {
@@ -191,15 +192,13 @@ PyArrayD2_subscript(PyObject *self, PyObject *key)
 }
 
 
-static Py_ssize_t
-PyArrayD2_length(PyArrayD2Object *self, PyObject *args, PyObject *value)
+static int
+PyArrayD2_ass_item(PyObject *self, PyObject *args, PyObject *value)
 {
     auto *obj = (PyArrayD2Object*)self;
     Py_ssize_t i, j;
 
-    // assuming your C++ object has a .len member
-    return (Py_ssize_t) self->cpp_obj->shape[0];
-        if (!get_two_indices(args, i, j))
+    if (!get_two_indices(args, i, j))
         return -1;
 
     if (i < 0 || i >= (Py_ssize_t)obj->cpp_obj->shape[0] ||
@@ -215,5 +214,9 @@ PyArrayD2_length(PyArrayD2Object *self, PyObject *args, PyObject *value)
 
 }
 
+static Py_ssize_t 
+PyArrayD2_length(PyArrayD2Object *self, PyObject *args){
+    return (Py_ssize_t) self->cpp_obj->shape[0];
+}
 
 #endif

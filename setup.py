@@ -45,7 +45,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.4.6",
+    version="0.4.7",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="C/C++ bindings for pypearl",
