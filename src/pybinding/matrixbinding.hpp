@@ -81,15 +81,24 @@ static int PyArrayD1_ass_item(PyObject *self, Py_ssize_t idx, PyObject *value);
 
 // Double 2D
 static void PyArrayD2_dealloc(PyArrayD2Object *self);
-static PyObject* PyArrayD2_new(PyArrayD2Object *type, PyObject *args, PyObject *kwds);
+static PyObject* PyArrayD2_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int PyArrayD2_init(PyArrayD2Object *self, PyObject *args, PyObject *kwds);
 static Py_ssize_t PyArrayD2_length(PyArrayD2Object *self, PyObject *args);
 static int PyArrayD2_ass_item(PyObject *self, PyObject *args, PyObject *value);
 static PyObject* PyArrayD2_item(PyObject *self, PyObject *args);
-static PyObject* PyArrayD2_get_ndim(PyArrayD2Object *self, void *);
 
 
-#include "matrixbinding.cpp"
+extern PyMethodDef PyArrayD1_methods[];
+extern PyGetSetDef PyArrayD1_getset[];
+extern PyTypeObject PyArrayD1Type;
+extern PySequenceMethods PyArrayD1_as_sequence;
+
+extern PyMethodDef PyArrayD2_methods[];
+extern PyGetSetDef PyArrayD2_getset[];
+extern PyTypeObject PyArrayD2Type;
+extern PyMappingMethods PyArrayD2_as_mapping;
+
+
 #endif
 // For anyone trying to understand this file, start by following it for a 1d and 2d double array, once you get that you'll understand the whole thing.
 

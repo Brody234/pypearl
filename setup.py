@@ -31,6 +31,8 @@ ext_modules = [
         name="pypearl._pypearl",
         sources=[
             "src/pybinding/binding.cpp",
+            "src/pybinding/layerbinding.cpp",
+            "src/pybinding/matrixbinding.cpp"
         ],
         include_dirs=[
             # so you can #include "matrix.hpp" and "matrixbinding.hpp"

@@ -116,6 +116,49 @@ PyArrayD1_ass_item(PyObject *self, Py_ssize_t idx, PyObject *value)
     return 0;
 }
 
+PyMethodDef PyArrayD1_methods[] = {
+    {"get", (PyCFunction)PyArrayD1_get, METH_VARARGS,
+     "get(index) -> float\n\n"
+     "Return the element at position `index` (0-based)."},
+     {"set", (PyCFunction)PyArrayD1_set, METH_VARARGS, "set(index)->float\n\n"
+     "Change the element at position index"},
+    {NULL, NULL, 0, NULL}
+};
+
+PyGetSetDef PyArrayD1_getset[] = {
+    {NULL, NULL, NULL, NULL, NULL}
+}; 
+
+PyTypeObject PyArrayD1Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "pypearl.ArrayD1",
+    .tp_basicsize = sizeof(PyArrayD1Object),
+    .tp_dealloc   = (destructor)PyArrayD1_dealloc,
+    .tp_flags     = Py_TPFLAGS_DEFAULT,
+    .tp_doc       = "1-D double array",
+    .tp_methods   = PyArrayD1_methods,
+    .tp_getset    = PyArrayD1_getset,
+    .tp_new       = PyArrayD1_new,
+    .tp_init      = (initproc)PyArrayD1_init,
+};
+
+
+PySequenceMethods PyArrayD1_as_sequence = {
+    /* sq_length    */ (lenfunc)         PyArrayD1_length,
+    /* sq_concat    */ 0,
+    /* sq_repeat    */ 0,
+    /* sq_item      */ (ssizeargfunc)    PyArrayD1_item,      // <— adapter
+    /* sq_slice     */ 0,
+    /* sq_ass_item  */ (ssizeobjargproc) PyArrayD1_ass_item,  // <— adapter
+    /* …rest zero… */
+};
+
+
+
+
+
+
+
 static void
 PyArrayD2_dealloc(PyArrayD2Object *self)
 {
@@ -123,7 +166,7 @@ PyArrayD2_dealloc(PyArrayD2Object *self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-static PyObject *
+static PyObject*
 PyArrayD2_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyArrayD2Object *self = (PyArrayD2Object*)type->tp_alloc(type, 0);
@@ -218,5 +261,32 @@ static Py_ssize_t
 PyArrayD2_length(PyArrayD2Object *self, PyObject *args){
     return (Py_ssize_t) self->cpp_obj->shape[0];
 }
+
+PyMethodDef PyArrayD2_methods[] = {
+    
+    {NULL, NULL, 0, NULL}
+};
+
+PyGetSetDef PyArrayD2_getset[] = {
+    {NULL, NULL, NULL, NULL, NULL}
+};
+
+PyTypeObject PyArrayD2Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "pypearl.ArrayD2",
+    .tp_basicsize = sizeof(PyArrayD2Object),
+    .tp_dealloc   = (destructor)PyArrayD2_dealloc,
+    .tp_flags     = Py_TPFLAGS_DEFAULT,
+    .tp_doc       = "2-D double array",
+    .tp_methods   = PyArrayD2_methods,
+    .tp_getset    = PyArrayD2_getset,
+    .tp_new       = PyArrayD2_new,
+    .tp_init      = (initproc)PyArrayD2_init,
+};
+PyMappingMethods PyArrayD2_as_mapping = {
+    /* mp_length        */ (lenfunc)       PyArrayD2_length,       // len(x) → rows
+    /* mp_subscript     */ (binaryfunc)    PyArrayD2_item,         // x[key]
+    /* mp_ass_subscript */ (objobjargproc) PyArrayD2_ass_item,    // x[key] = val
+};
 
 #endif
