@@ -1,5 +1,6 @@
 #ifndef BASEACTIVATION_H
 #define BASEACTIVATION_H
+#include "../../matrix/matrix.hpp"
 
 template <typename NumType = float>
 class BaseActivation {

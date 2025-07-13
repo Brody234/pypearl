@@ -2,6 +2,7 @@
 #include "../matrix/matrix.hpp"
 #include "matrixbinding.hpp"
 #include "layerbinding.hpp"
+#include "./activationbinding/relubinding.hpp"
 
 PyObject *add(PyObject *self, PyObject *args){
     int x;
@@ -45,17 +46,23 @@ PyInit__pypearl(void)
     if (PyType_Ready(&PyArrayD2Type) < 0) {
         Py_DECREF(m);
         return NULL;
-    }
+    } 
     Py_INCREF(&PyArrayD2Type);
     PyModule_AddObject(m, "ArrayD2", (PyObject*)&PyArrayD2Type);
 
-    // --- register ArrayD2 ---
     if (PyType_Ready(&PyLayerDType) < 0) {
         Py_DECREF(m);
         return NULL;
     }
     Py_INCREF(&PyLayerDType);
     PyModule_AddObject(m, "Layer", (PyObject*)&PyLayerDType);
+
+    if (PyType_Ready(&PyReLUDType) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    Py_INCREF(&PyReLUDType);
+    PyModule_AddObject(m, "ReLU", (PyObject*)&PyReLUDType);
 
     return m;
 }  

@@ -1,6 +1,8 @@
 #ifndef ACTIVATIONRELU_H
 #define ACTIVATIONRELU_H
 
+#include "baseactivation.hpp"
+
 template <typename NumType = float>
 class ActivationReLU : public BaseActivation<NumType>
 {
@@ -57,13 +59,13 @@ class ActivationReLU : public BaseActivation<NumType>
             if(samples <= 0){
                 return Array<NumType, 2>();
             }
-            saved_samples = samples;
-            saved_prev_layer = prev_layer;
-            size_t shape[2] = {samples, prev_layer};
+            saved_samples = inputs.shape[0];
+            saved_prev_layer = inputs.shape[1];
+            size_t shape[2] = {saved_samples, saved_prev_layer};
             saved_inputs = Array<NumType, 2>(shape);
             this->outputs = Array<NumType, 2>(shape);
-            for(size_t i = 0; i < samples; i++){
-                for(size_t j = 0; j < prev_layer; j++){
+            for(size_t i = 0; i < saved_samples; i++){
+                for(size_t j = 0; j < saved_prev_layer; j++){
                     saved_inputs[i][j] = inputs[i][j];
                     if(inputs[i][j] < minimum){
                         this->outputs[i][j] = minimum;

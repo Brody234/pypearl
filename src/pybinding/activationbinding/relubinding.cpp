@@ -1,9 +1,9 @@
-#ifndef LAYERBINDING
-#define LAYERBINDING
-#include "layerbinding.hpp"
+#ifndef RELUBINDING
+#define RELUBINDING
+#include "relubinding.hpp"
 
 static void
-PyLayerD_dealloc(PyLayerDObject *self)
+PyReLUD_dealloc(PyReLUDObject *self)
 {
     delete self->cpp_obj;
 
@@ -11,9 +11,9 @@ PyLayerD_dealloc(PyLayerDObject *self)
 }
 
 static PyObject *
-PyLayerD_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+PyReLUD_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyLayerDObject *self = (PyLayerDObject*)type->tp_alloc(type, 0);
+    PyReLUDObject *self = (PyReLUDObject*)type->tp_alloc(type, 0);
     if (self) {
         self->cpp_obj = nullptr;
     }
@@ -21,7 +21,7 @@ PyLayerD_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-PyLayerD_init(PyLayerDObject *self, PyObject *args, PyObject *kwds)
+PyReLUD_init(PyReLUDObject *self, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t prev, cur;
     static char *kwlist[] = { (char*)"prev_layer_size", (char*)"layer_size", nullptr };
@@ -31,7 +31,7 @@ PyLayerD_init(PyLayerDObject *self, PyObject *args, PyObject *kwds)
 
     try {
         // allocate your C++ object
-        self->cpp_obj = new LayerD((size_t)prev, (size_t)cur, false);
+        self->cpp_obj = new ReLUD();
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
@@ -39,8 +39,9 @@ PyLayerD_init(PyLayerDObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyObject* PyLayerD_forward(PyLayerDObject *self, PyObject *arg){
-    PyLayerDObject *layer_obj = (PyLayerDObject*) self;
+static PyObject * 
+PyReLUD_forward(PyReLUDObject *self, PyObject *arg){
+    PyReLUDObject *relu_obj = (PyReLUDObject*) self;
 
     static char *kwlist[] = { (char*)"x", NULL };
     if (!PyObject_TypeCheck(arg, &PyArrayD2Type)) {
@@ -51,7 +52,7 @@ static PyObject* PyLayerD_forward(PyLayerDObject *self, PyObject *arg){
 
     ArrayD2 out_cpp;
     try {
-        out_cpp = layer_obj->cpp_obj->forward(*input_obj->cpp_obj);
+        out_cpp = relu_obj->cpp_obj->forward(*input_obj->cpp_obj, 8, 8);
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
@@ -65,30 +66,30 @@ static PyObject* PyLayerD_forward(PyLayerDObject *self, PyObject *arg){
     ((PyArrayD2Object*)out_py)->cpp_obj = new ArrayD2(std::move(out_cpp));
 
     return out_py;
-
 }
 
-PyMethodDef PyLayerD_methods[] = {
-    {"forward", (PyCFunction)PyLayerD_forward, METH_O, "forward(x)->y"},
+PyMethodDef PyReLUD_methods[] = {
+    {"forward", (PyCFunction)PyReLUD_forward, METH_O, "forward(x)->y"},
     {NULL, NULL, 0, NULL}
 };
 
-PyGetSetDef PyLayerD_getset[] = {
+PyGetSetDef PyReLUD_getset[] = {
     {NULL, NULL, NULL, NULL, NULL}
 };
 
-PyTypeObject PyLayerDType = {
+PyTypeObject PyReLUDType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.Layer",
-    .tp_basicsize = sizeof(PyLayerDObject),
-    .tp_dealloc   = (destructor)PyLayerD_dealloc,
+    .tp_name      = "pypearl.ReLU",
+    .tp_basicsize = sizeof(PyReLUDObject),
+    .tp_dealloc   = (destructor)PyReLUD_dealloc,
     .tp_flags     = Py_TPFLAGS_DEFAULT,
     .tp_doc       = "Neural Network Layer",
-    .tp_methods   = PyLayerD_methods,
-    .tp_getset    = PyLayerD_getset,
-    .tp_new       = PyLayerD_new,
-    .tp_init      = (initproc)PyLayerD_init,
+    .tp_methods   = PyReLUD_methods,
+    .tp_getset    = PyReLUD_getset,
+    .tp_new       = PyReLUD_new,
+    .tp_init      = (initproc)PyReLUD_init,
 };
+
 
 
 #endif

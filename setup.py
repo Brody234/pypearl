@@ -32,7 +32,8 @@ ext_modules = [
         sources=[
             "src/pybinding/binding.cpp",
             "src/pybinding/layerbinding.cpp",
-            "src/pybinding/matrixbinding.cpp"
+            "src/pybinding/matrixbinding.cpp",
+            "src/pybinding/activationbinding/relubinding.cpp"
         ],
         include_dirs=[
             # so you can #include "matrix.hpp" and "matrixbinding.hpp"
