@@ -68,6 +68,17 @@ PyArrayD1_length(PyArrayD1Object *self, PyObject *args)
     // assuming your C++ object has a .len member
     return (Py_ssize_t) self->cpp_obj->len;
 }
+static PyObject *
+PyArrayD1_str(PyArrayD1Object *self)
+{
+    try {
+        const std::string &s = self->cpp_obj->toString();
+        return PyUnicode_FromString(s.c_str());   /* new ref */
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
 
 static PyObject *
 PyArrayD1_get(PyArrayD1Object *self, PyObject *args)
@@ -135,6 +146,8 @@ PyTypeObject PyArrayD1Type = {
     .tp_basicsize = sizeof(PyArrayD1Object),
     .tp_dealloc   = (destructor)PyArrayD1_dealloc,
     .tp_flags     = Py_TPFLAGS_DEFAULT,
+    .tp_str       = (reprfunc)PyArrayD1_str,
+    .tp_repr      = (reprfunc)PyArrayD1_str,
     .tp_doc       = "1-D double array",
     .tp_methods   = PyArrayD1_methods,
     .tp_getset    = PyArrayD1_getset,
@@ -262,6 +275,19 @@ PyArrayD2_length(PyArrayD2Object *self, PyObject *args){
     return (Py_ssize_t) self->cpp_obj->shape[0];
 }
 
+static PyObject *
+PyArrayD2_str(PyArrayD2Object *self)
+{
+    try {
+        const std::string &s = self->cpp_obj->toString();
+        return PyUnicode_FromString(s.c_str());   /* new ref */
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
+
+
 PyMethodDef PyArrayD2_methods[] = {
     
     {NULL, NULL, 0, NULL}
@@ -277,6 +303,8 @@ PyTypeObject PyArrayD2Type = {
     .tp_basicsize = sizeof(PyArrayD2Object),
     .tp_dealloc   = (destructor)PyArrayD2_dealloc,
     .tp_flags     = Py_TPFLAGS_DEFAULT,
+    .tp_str       = (reprfunc)PyArrayD2_str,
+    .tp_repr      = (reprfunc)PyArrayD2_str,
     .tp_doc       = "2-D double array",
     .tp_methods   = PyArrayD2_methods,
     .tp_getset    = PyArrayD2_getset,
@@ -289,4 +317,142 @@ PyMappingMethods PyArrayD2_as_mapping = {
     /* mp_ass_subscript */ (objobjargproc) PyArrayD2_ass_item,    // x[key] = val
 };
 
+static void
+PyArrayI2_dealloc(PyArrayI2Object *self)
+{
+    delete self->cpp_obj;
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+static PyObject*
+PyArrayI2_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyArrayI2Object *self = (PyArrayI2Object*)type->tp_alloc(type, 0);
+    if (self) {
+        self->cpp_obj = nullptr;
+    }
+    return (PyObject*)self;
+}
+
+static int
+PyArrayI2_init(PyArrayI2Object *self, PyObject *args, PyObject *kwds)
+{
+    Py_ssize_t rows, cols;
+    static char *kwlist[] = { (char*)"rows", (char*)"cols", nullptr };
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nn", kwlist, &rows, &cols))
+        return -1;
+
+    // build a two-element size array
+    std::size_t dims[2] = { static_cast<std::size_t>(rows),
+                            static_cast<std::size_t>(cols) };
+    try {
+        // call your Array<const size_t*> constructor
+        self->cpp_obj = new ArrayI2(dims);
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return -1;
+    }
+    return 0;
+}
+
+
+// __getitem__ for 2D
+static PyObject *
+PyArrayI2_item(PyObject *self, PyObject *args)
+{
+    auto *obj = (PyArrayI2Object*)self;
+    Py_ssize_t i, j;
+    if (!get_two_indices(args, i, j))
+        return NULL;
+    // bounds check
+    if (i < 0 || i >= (Py_ssize_t)obj->cpp_obj->shape[0] ||
+        j < 0 || j >= (Py_ssize_t)obj->cpp_obj->shape[1]) {
+        PyErr_SetString(PyExc_IndexError, "ArrayI2 index out of range");
+        return NULL;
+    }
+
+    // assuming operator[](i)[j] works in your C++
+    int v = (*obj->cpp_obj)[i][j];
+    return PyLong_FromLong((long)v);
+}
+
+
+static int
+PyArrayI2_ass_item(PyObject *self, PyObject *args, PyObject *value)
+{
+    auto *obj = (PyArrayI2Object*)self;
+    Py_ssize_t i, j;
+
+    if (!get_two_indices(args, i, j))
+        return -1;
+
+    if (i < 0 || i >= (Py_ssize_t)obj->cpp_obj->shape[0] ||
+        j < 0 || j >= (Py_ssize_t)obj->cpp_obj->shape[1]) {
+        PyErr_SetString(PyExc_IndexError, "ArrayI2 index out of range");
+        return -1;
+    }
+
+    long tmp = PyLong_AsLong(value);
+    if (tmp < INT_MIN || tmp > INT_MAX) {    
+        PyErr_SetString(PyExc_OverflowError,
+                        "value out of range for C int");
+        return NULL;
+    }
+
+    int dv = (int)tmp;                       
+
+    if (PyErr_Occurred()) return -1;
+    (*obj->cpp_obj)[i][j] = dv;
+    return 0;
+
+}
+
+static Py_ssize_t 
+PyArrayI2_length(PyArrayI2Object *self, PyObject *args){
+    return (Py_ssize_t) self->cpp_obj->shape[0];
+}
+
+static PyObject *
+PyArrayI2_str(PyArrayI2Object *self)
+{
+    try {
+        const std::string &s = self->cpp_obj->toString();
+        return PyUnicode_FromString(s.c_str());   /* new ref */
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
+
+
+PyMethodDef PyArrayI2_methods[] = {
+    
+    {NULL, NULL, 0, NULL}
+};
+
+PyGetSetDef PyArrayI2_getset[] = {
+    {NULL, NULL, NULL, NULL, NULL}
+};
+
+PyTypeObject PyArrayI2Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "pypearl.ArrayI2",
+    .tp_basicsize = sizeof(PyArrayI2Object),
+    .tp_dealloc   = (destructor)PyArrayI2_dealloc,
+    .tp_flags     = Py_TPFLAGS_DEFAULT,
+    .tp_str       = (reprfunc)PyArrayI2_str,
+    .tp_repr      = (reprfunc)PyArrayI2_str,
+    .tp_doc       = "2-D int array",
+    .tp_methods   = PyArrayI2_methods,
+    .tp_getset    = PyArrayI2_getset,
+    .tp_new       = PyArrayI2_new,
+    .tp_init      = (initproc)PyArrayI2_init,
+};
+PyMappingMethods PyArrayI2_as_mapping = {
+    /* mp_length        */ (lenfunc)       PyArrayI2_length,       // len(x) → rows
+    /* mp_subscript     */ (binaryfunc)    PyArrayI2_item,         // x[key]
+    /* mp_ass_subscript */ (objobjargproc) PyArrayI2_ass_item,    // x[key] = val
+};
+
+ 
 #endif

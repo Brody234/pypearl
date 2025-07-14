@@ -24,11 +24,6 @@ static int
 PyReLUD_init(PyReLUDObject *self, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t prev, cur;
-    static char *kwlist[] = { (char*)"prev_layer_size", (char*)"layer_size", nullptr };
-    // require one integer argument: size
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nn", kwlist, &prev, &cur))
-        return -1;
-
     try {
         // allocate your C++ object
         self->cpp_obj = new ReLUD();
@@ -68,8 +63,37 @@ PyReLUD_forward(PyReLUDObject *self, PyObject *arg){
     return out_py;
 }
 
+static PyObject * 
+PyReLUD_backward(PyReLUDObject *self, PyObject *arg){
+    PyReLUDObject *relu_obj = (PyReLUDObject*) self;
+
+    if (!PyObject_TypeCheck(arg, &PyArrayD2Type)) {
+        PyErr_SetString(PyExc_TypeError, "forward() expects an ArrayD2");
+        return NULL;
+    }
+    PyArrayD2Object *input_obj = (PyArrayD2Object*)arg;
+
+    ArrayD2 out_cpp;
+    try {
+        out_cpp = relu_obj->cpp_obj->backward(*input_obj->cpp_obj);
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+
+    // Allocate a new Python ArrayD2 object
+    PyObject *out_py = PyArrayD2Type.tp_new(&PyArrayD2Type, NULL, NULL);
+    if (!out_py) return NULL;
+
+    // Steal the C++ result into its cpp_obj
+    ((PyArrayD2Object*)out_py)->cpp_obj = new ArrayD2(std::move(out_cpp));
+
+    return out_py;
+}
+
 PyMethodDef PyReLUD_methods[] = {
     {"forward", (PyCFunction)PyReLUD_forward, METH_O, "forward(x)->y"},
+    {"backward", (PyCFunction)PyReLUD_backward, METH_O, "backward(x)->y"},
     {NULL, NULL, 0, NULL}
 };
 

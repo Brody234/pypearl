@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include "../utilities/matrixutility.hpp"
+#include "baseactivation.hpp"
 
 template <typename NumType = float>
 class ActivationSoftMax : public BaseActivation<NumType>
@@ -13,30 +14,31 @@ class ActivationSoftMax : public BaseActivation<NumType>
     public:
         Array<NumType, 2> forward(Array<NumType, 2>& inputs, size_t samples, size_t prev_layer) override{
             //matrixViewer(inputs, samples, prev_layer);
-            saved_samples = samples;
-            saved_prev_layer = prev_layer;
-            if(samples <= 0){
+            
+            saved_samples = inputs.shape[0];
+            saved_prev_layer = inputs.shape[1];
+            if(saved_samples <= 0){
                 return Array<NumType, 2>();
             }
             /*if(this->outputs != nullptr){
                 clearMatrix(this->outputs, samples);
                 this->outputs = nullptr;
             }*/
-            size_t outputsShape[2] = {samples, prev_layer};
+            size_t outputsShape[2] = {saved_samples, saved_prev_layer};
             this->outputs = Array<NumType, 2>(outputsShape);
-            for(int i = 0; i < samples; i++){
+            for(int i = 0; i < saved_samples; i++){
                 NumType sum = 0.0f;
                 NumType max = inputs[i][0];
-                for(int j = 1; j < prev_layer; j++){
+                for(int j = 1; j < saved_prev_layer; j++){
                     if(max < inputs[i][j]){
                         max = inputs[i][j];
                     }
                 }
-                for(int j = 0; j < prev_layer; j++){
+                for(int j = 0; j < saved_prev_layer; j++){
                     this->outputs[i][j] = exp(inputs[i][j]-max);
                     sum += this->outputs[i][j];
                 }
-                for(int j = 0; j < prev_layer; j++){
+                for(int j = 0; j < saved_prev_layer; j++){
                     if(i== 0 && j == 0){
                         //std::cout << sum << std::endl;
                     }
@@ -45,6 +47,13 @@ class ActivationSoftMax : public BaseActivation<NumType>
             }
             return this->outputs;
         }
+
+        Array<NumType, 1> forwardRL(Array<NumType, 1>& input) override
+        {
+            return input;                 
+        }
+
+
         Array<NumType, 2> backward(Array<NumType, 2>& dvalues) override{
             size_t dinputsShape[2] = {saved_samples, saved_prev_layer};
             this->dinputs = Array<NumType, 2>(dinputsShape);
@@ -59,6 +68,11 @@ class ActivationSoftMax : public BaseActivation<NumType>
         void print() override{
             std::cout << " Softmax " << std::endl;
         }
+
+        void endEpisodeRL() override
+        {
+        }
+
 };
 
 #endif

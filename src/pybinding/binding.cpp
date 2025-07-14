@@ -3,16 +3,19 @@
 #include "matrixbinding.hpp"
 #include "layerbinding.hpp"
 #include "./activationbinding/relubinding.hpp"
+#include "./activationbinding/softmaxbinding.hpp"
+#include "./lossbinding/ccebinding.hpp"
+#include "./optimizerbinding/sgdbinding.hpp"
 
 PyObject *add(PyObject *self, PyObject *args){
     int x;
-    int y;
+    int y; 
 
     PyArg_ParseTuple(args, "ii", &x, &y);
 
     return PyLong_FromLong(((long)(x+y)));
-};
-
+};  
+    
 static PyMethodDef methods[] {
     {"add", add, METH_VARARGS, "Adds two numbers together"},
     {NULL, NULL, 0, NULL}
@@ -50,6 +53,14 @@ PyInit__pypearl(void)
     Py_INCREF(&PyArrayD2Type);
     PyModule_AddObject(m, "ArrayD2", (PyObject*)&PyArrayD2Type);
 
+    PyArrayI2Type.tp_as_mapping = &PyArrayI2_as_mapping;
+    if (PyType_Ready(&PyArrayI2Type) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    } 
+    Py_INCREF(&PyArrayI2Type);
+    PyModule_AddObject(m, "ArrayI2", (PyObject*)&PyArrayI2Type);
+
     if (PyType_Ready(&PyLayerDType) < 0) {
         Py_DECREF(m);
         return NULL;
@@ -64,7 +75,29 @@ PyInit__pypearl(void)
     Py_INCREF(&PyReLUDType);
     PyModule_AddObject(m, "ReLU", (PyObject*)&PyReLUDType);
 
-    return m;
-}  
+    if (PyType_Ready(&PySoftmaxDType) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    } 
+    Py_INCREF(&PySoftmaxDType);
+    PyModule_AddObject(m, "Softmax", (PyObject*)&PySoftmaxDType);
+  
+    if (PyType_Ready(&PyCCEDType) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyCCEDType);
+
+    PyModule_AddObject(m, "CCE", (PyObject*)&PyCCEDType);
+     if (PyType_Ready(&PySGDDType) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PySGDDType);
+    PyModule_AddObject(m, "SGD", (PyObject*)&PySGDDType);
+
  
+    return m; 
+}  
+  
   

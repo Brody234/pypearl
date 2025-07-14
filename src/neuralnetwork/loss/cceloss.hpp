@@ -3,6 +3,8 @@
 #include <random>
 #include <iostream>
 #include <memory>
+#include "baseloss.hpp"
+#include "../../matrix/matrix.hpp"
 #include "../utilities/matrixutility.hpp"
 #include "../utilities/vectorutility.hpp"
 #include "../testdata/viewer.hpp"
@@ -14,6 +16,8 @@ class LossCCE : public BaseLoss<NumType>
         Array<NumType, 1> vector;
         size_t vector_size = 0;
         size_t saved_samples;
+        Array<NumType, 2> saved_inputs;
+        Array<int, 2> saved_actual;
 
     public:
         ~LossCCE() {
@@ -48,23 +52,47 @@ class LossCCE : public BaseLoss<NumType>
 
         // Each Output Neuron Identifies Classes
         NumType forwardClass(Array<NumType, 2>& outputMatrix, size_t samples, size_t output_neurons, Array<int, 2>& actualMatrix) override {
-            saved_samples = samples;
-            Array<NumType, 2> copiedMatrix = copyMatrix<NumType>(outputMatrix, samples, output_neurons);
+            saved_samples = outputMatrix.shape[0];
+            size_t output_size = outputMatrix.shape[1];
+            Array<NumType, 2> copiedMatrix = copyMatrix<NumType>(outputMatrix, saved_samples, output_size);
 
-            for(size_t i = 0; i < samples; i++){
-                for(size_t j = 0; j < output_neurons; j++){
+            for(size_t i = 0; i < saved_samples; i++){
+                for(size_t j = 0; j < output_size; j++){
                     copiedMatrix[i][j] *= actualMatrix[i][j];
                 }
             }
 
-            matrixClip<NumType>(copiedMatrix, samples, output_neurons, 1, 0);
+            matrixClip<NumType>(copiedMatrix, saved_samples, output_size, 1, 0);
 
-            vector = matrixLogNegVectorSum(copiedMatrix, samples, output_neurons);
+            vector = matrixLogNegVectorSum(copiedMatrix, saved_samples, output_size);
 
-            NumType mean = vectorMean(vector, samples);
+            NumType mean = vectorMean(vector, saved_samples);
 
-            clearMatrix(copiedMatrix, samples);
+            clearMatrix(copiedMatrix, saved_samples);
             return mean;
+        }
+
+        Array<NumType, 2> backwardClass(Array<int, 2>& actualMatrix, Array<NumType, 2>& softouts) override{
+
+            size_t shape[2] = {actualMatrix.shape[0], actualMatrix.shape[1]};
+            this->dvalues = Array<NumType, 2>(shape);
+
+            for (size_t i = 0; i < actualMatrix.shape[0]; i++) {
+
+                for (size_t j = 0; j < actualMatrix.shape[1]; j++) {
+                    NumType r = softouts[i][j];
+                    this->dvalues[i][j] = softouts[i][j];
+
+                    if (1 == actualMatrix[i][j]) {
+                        this->dvalues[i][j] -= 1.0f;
+                    }
+
+                    this->dvalues[i][j] /= saved_samples;
+                }
+            }
+
+            return this->dvalues;
+
         }
 
         Array<NumType, 2> backwardClass(size_t output_neurons, Array<int, 1>& y_true, Array<NumType, 2>& softouts) override{

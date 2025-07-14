@@ -2,8 +2,9 @@
 #define SGDOPTIMIZER_H
 
 #include <iostream>
-
+#include "baseoptimizer.hpp"
 #include "../layer/layer.hpp"
+
 
 template <typename NumType = float>
 class OptimizerSGD : public BaseOptimizer<NumType>
@@ -47,35 +48,36 @@ class OptimizerSGD : public BaseOptimizer<NumType>
             learning_rate = original_learning_rate*(1.0f/(1.0f + decay * iterations));
             iterations++;
         }
-        void optimize_layer(Layer<NumType>* layer) override{
+        void optimize_layer(Layer<NumType>& layer) override{
             if(momentum){
                 
             }
             else{
                 //NumType clip_value = 0.1f;
-                for(int i = 0; i < layer->weights.shape[0]; i++){
-                    for(int j = 0; j < layer->weight_inner_size; j++){
+                for(int i = 0; i < layer.weights.shape[0]; i++){
+                    for(int j = 0; j < layer.weights.shape[1]; j++){
                        /* if (layer->dweights[i][j] > clip_value) {
                             layer->dweights[i][j] = clip_value;
                         } else if (layer->dweights[i][j] < -clip_value) {
                             layer->dweights[i][j] = -clip_value;
                         }*/
-
-                        layer->weights[i][j] += -learning_rate*layer->dweights[i][j];
+                        layer.weights[i][j] += -learning_rate*layer.dweights[i][j];
                         
                     }
                 }
-                for(int i = 0; i < layer->biases.len; i++){
+
+                for(int i = 0; i < layer.biases.len; i++){
                     /*if (layer->dbiases[i] > clip_value) {
                         layer->dbiases[i] = clip_value;
                     } else if (layer->dbiases[i] < -clip_value) {
                         layer->dbiases[i] = -clip_value;
                     }*/
-                    layer->biases[i] += -learning_rate*layer->dbiases[i];
+                    layer.biases[i] += -learning_rate*layer.dbiases[i];
                 }
+
             }
         }
-        void optimize_prelu(ActivationPReLU<NumType>* prelu) override{
+        /*void optimize_prelu(ActivationPReLU<NumType>* prelu) override{
             if(momentum){
 
             }
@@ -89,7 +91,7 @@ class OptimizerSGD : public BaseOptimizer<NumType>
                     prelu->alphaSingle -= learning_rate*prelu->dalphaSingle;
                 }
             }
-        }
+        }*/
 };
 
 #endif

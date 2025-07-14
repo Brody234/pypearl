@@ -87,6 +87,13 @@ static Py_ssize_t PyArrayD2_length(PyArrayD2Object *self, PyObject *args);
 static int PyArrayD2_ass_item(PyObject *self, PyObject *args, PyObject *value);
 static PyObject* PyArrayD2_item(PyObject *self, PyObject *args);
 
+static void PyArrayI2_dealloc(PyArrayI2Object *self);
+static PyObject* PyArrayI2_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static int PyArrayI2_init(PyArrayI2Object *self, PyObject *args, PyObject *kwds);
+static Py_ssize_t PyArrayI2_length(PyArrayI2Object *self, PyObject *args);
+static int PyArrayI2_ass_item(PyObject *self, PyObject *args, PyObject *value);
+static PyObject* PyArrayI2_item(PyObject *self, PyObject *args);
+
 
 extern PyMethodDef PyArrayD1_methods[];
 extern PyGetSetDef PyArrayD1_getset[];
@@ -98,6 +105,10 @@ extern PyGetSetDef PyArrayD2_getset[];
 extern PyTypeObject PyArrayD2Type;
 extern PyMappingMethods PyArrayD2_as_mapping;
 
+extern PyMethodDef PyArrayI2_methods[];
+extern PyGetSetDef PyArrayI2_getset[];
+extern PyTypeObject PyArrayI2Type;
+extern PyMappingMethods PyArrayI2_as_mapping;
 
 #endif
 // For anyone trying to understand this file, start by following it for a 1d and 2d double array, once you get that you'll understand the whole thing.

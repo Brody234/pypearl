@@ -1,9 +1,9 @@
-#ifndef LAYERBINDING
-#define LAYERBINDING
-#include "layerbinding.hpp"
+#ifndef SOFTBINDING
+#define SOFTBINDING
+#include "softmaxbinding.hpp"
 
 static void
-PyLayerD_dealloc(PyLayerDObject *self)
+PySoftmaxD_dealloc(PySoftmaxDObject *self)
 {
     delete self->cpp_obj;
 
@@ -11,9 +11,9 @@ PyLayerD_dealloc(PyLayerDObject *self)
 }
 
 static PyObject *
-PyLayerD_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+PySoftmaxD_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyLayerDObject *self = (PyLayerDObject*)type->tp_alloc(type, 0);
+    PySoftmaxDObject *self = (PySoftmaxDObject*)type->tp_alloc(type, 0);
     if (self) {
         self->cpp_obj = nullptr;
     }
@@ -21,17 +21,12 @@ PyLayerD_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-PyLayerD_init(PyLayerDObject *self, PyObject *args, PyObject *kwds)
+PySoftmaxD_init(PySoftmaxDObject *self, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t prev, cur;
-    static char *kwlist[] = { (char*)"prev_layer_size", (char*)"layer_size", nullptr };
-    // require one integer argument: size
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nn", kwlist, &prev, &cur))
-        return -1;
-
     try {
         // allocate your C++ object
-        self->cpp_obj = new LayerD((size_t)prev, (size_t)cur, false);
+        self->cpp_obj = new SoftmaxD();
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
@@ -39,18 +34,20 @@ PyLayerD_init(PyLayerDObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyObject* PyLayerD_forward(PyLayerDObject *self, PyObject *arg){
-    PyLayerDObject *layer_obj = (PyLayerDObject*) self;
+static PyObject * 
+PySoftmaxD_forward(PySoftmaxDObject *self, PyObject *arg){
+    PySoftmaxDObject *soft_obj = (PySoftmaxDObject*) self;
 
+    static char *kwlist[] = { (char*)"x", NULL };
     if (!PyObject_TypeCheck(arg, &PyArrayD2Type)) {
-        PyErr_SetString(PyExc_TypeError, "forward(x) expects an ArrayD2");
+        PyErr_SetString(PyExc_TypeError, "forward() expects an ArrayD2");
         return NULL;
     }
     PyArrayD2Object *input_obj = (PyArrayD2Object*)arg;
 
     ArrayD2 out_cpp;
     try {
-        out_cpp = layer_obj->cpp_obj->forward(*input_obj->cpp_obj);
+        out_cpp = soft_obj->cpp_obj->forward(*input_obj->cpp_obj, 8, 8);
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
@@ -64,21 +61,21 @@ static PyObject* PyLayerD_forward(PyLayerDObject *self, PyObject *arg){
     ((PyArrayD2Object*)out_py)->cpp_obj = new ArrayD2(std::move(out_cpp));
 
     return out_py;
-
 }
 
-static PyObject* PyLayerD_backward(PyLayerDObject *self, PyObject *arg){
-    PyLayerDObject *layer_obj = (PyLayerDObject*) self;
+static PyObject * 
+PySoftmaxD_backward(PySoftmaxDObject *self, PyObject *arg){
+    PySoftmaxDObject *soft_obj = (PySoftmaxDObject*) self;
 
     if (!PyObject_TypeCheck(arg, &PyArrayD2Type)) {
-        PyErr_SetString(PyExc_TypeError, "forward(x) expects an ArrayD2");
+        PyErr_SetString(PyExc_TypeError, "forward() expects an ArrayD2");
         return NULL;
     }
     PyArrayD2Object *input_obj = (PyArrayD2Object*)arg;
 
     ArrayD2 out_cpp;
     try {
-        out_cpp = layer_obj->cpp_obj->backward(*input_obj->cpp_obj);
+        out_cpp = soft_obj->cpp_obj->backward(*input_obj->cpp_obj);
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
@@ -92,32 +89,31 @@ static PyObject* PyLayerD_backward(PyLayerDObject *self, PyObject *arg){
     ((PyArrayD2Object*)out_py)->cpp_obj = new ArrayD2(std::move(out_cpp));
 
     return out_py;
-
 }
 
-
-PyMethodDef PyLayerD_methods[] = {
-    {"forward", (PyCFunction)PyLayerD_forward, METH_O, "forward(x)->y"},
-    {"backward", (PyCFunction)PyLayerD_backward, METH_O, "backward"},
+PyMethodDef PySoftmaxD_methods[] = {
+    {"forward", (PyCFunction)PySoftmaxD_forward, METH_O, "forward(x)->y"},
+    {"backward", (PyCFunction)PySoftmaxD_backward, METH_O, "backward(x)->y"},
     {NULL, NULL, 0, NULL}
 };
 
-PyGetSetDef PyLayerD_getset[] = {
+PyGetSetDef PySoftmaxD_getset[] = {
     {NULL, NULL, NULL, NULL, NULL}
 };
 
-PyTypeObject PyLayerDType = {
+PyTypeObject PySoftmaxDType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.Layer",
-    .tp_basicsize = sizeof(PyLayerDObject),
-    .tp_dealloc   = (destructor)PyLayerD_dealloc,
+    .tp_name      = "pypearl.Softmax",
+    .tp_basicsize = sizeof(PySoftmaxDObject),
+    .tp_dealloc   = (destructor)PySoftmaxD_dealloc,
     .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_doc       = "Neural Network Layer",
-    .tp_methods   = PyLayerD_methods,
-    .tp_getset    = PyLayerD_getset,
-    .tp_new       = PyLayerD_new,
-    .tp_init      = (initproc)PyLayerD_init,
+    .tp_doc       = "Neural Network Softmax",
+    .tp_methods   = PySoftmaxD_methods,
+    .tp_getset    = PySoftmaxD_getset,
+    .tp_new       = PySoftmaxD_new,
+    .tp_init      = (initproc)PySoftmaxD_init,
 };
+
 
 
 #endif
