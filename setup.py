@@ -54,7 +54,7 @@ setup(
     version="0.4.7",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
-    description="C/C++ bindings for pypearl",
+    description="An efficient Machine Learning Library",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     ext_modules=ext_modules,
