@@ -40,6 +40,9 @@
 #include "testdata/generatenumbers.hpp"
 #include "testdata/viewer.hpp"
 
+// Model
+#include "model/model.hpp"
+#include "model/externalfunctions.hpp"
 // Managers
 //#include "statemanager/netmanager.hpp"
 //#include "statemanager/linkedmanager.hpp"

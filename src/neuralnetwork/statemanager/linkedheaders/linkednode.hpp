@@ -2,7 +2,7 @@
 #define LINKEDNODEMANAGER_H
 
 #include <vector>
-#include "../../layer/layerlite.hpp"
+#include "../../layer/layer.hpp"
 #include "../../activation/baseactivation.hpp"
 #include "../../activation/linearactivation.hpp"
 

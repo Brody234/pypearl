@@ -2,13 +2,16 @@
 #define BASEACTIVATION_H
 #include "../../matrix/matrix.hpp"
 
+typedef u_int8_t byte;
+
 template <typename NumType = float>
 class BaseActivation {
 public:
     virtual ~BaseActivation() = default;
 
-
     
+    byte type;
+
     Array<NumType, 2> outputs;
 
     Array<NumType, 2> dinputs;

@@ -31,6 +31,7 @@ venv/
 # Mac/Linux system files
 .DS_Store
 Thumbs.db
+
 #Matrix Stuff
 src/matrix/testcode.cpp
 src/matrix/testcode
@@ -48,6 +49,8 @@ src/neuralnetwork/tutorial
 src/neuralnetwork/tutorial.dSYM/
 src/neuralnetwork/oldtests.txt
 src/neuralnetwork/wrongcce.txt
+*.aimodel
+*.model
 
 #Decision Tree Stuff
 src/decisiontree/testcode.cpp

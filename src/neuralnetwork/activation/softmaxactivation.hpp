@@ -12,6 +12,9 @@ class ActivationSoftMax : public BaseActivation<NumType>
         size_t saved_samples;
         size_t saved_prev_layer;
     public:
+        ActivationSoftMax(){
+            this->type = 0x02;
+        }
         Array<NumType, 2> forward(Array<NumType, 2>& inputs, size_t samples, size_t prev_layer) override{
             //matrixViewer(inputs, samples, prev_layer);
             
@@ -48,9 +51,29 @@ class ActivationSoftMax : public BaseActivation<NumType>
             return this->outputs;
         }
 
+        // MEANT FOR GA 100% NOT GONNA WORK FOR RL
         Array<NumType, 1> forwardRL(Array<NumType, 1>& input) override
         {
-            return input;                 
+            size_t prev_layer = input.len;
+            auto output = Array<NumType, 1>(prev_layer);
+            NumType sum = 0.0f;
+            NumType max = input[0];
+            for(int j = 1; j < prev_layer; j++){
+                if(max < input[j]){
+                    max = input[j];
+                }
+            }
+            for(int j = 0; j < prev_layer; j++){
+                output[j] = exp(input[j]-max);
+                sum += output[j];
+            }
+            for(int j = 0; j < prev_layer; j++){
+                
+                output[j] = output[j]/(sum+1e-7);
+            }
+        
+            return output;
+              
         }
 
 

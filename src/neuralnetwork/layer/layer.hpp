@@ -45,7 +45,7 @@ class Layer
         Layer(size_t prev_layer, size_t this_layer, bool momentumVal);
 
         Layer(Layer&& other) noexcept;       
-        
+        ~Layer();
         Layer& operator=(Layer&& other) noexcept;  
 
 
@@ -54,8 +54,13 @@ class Layer
         Array<NumType, 2> backward(Array<NumType, 2>& dvalues);
 
         Array<NumType, 1> forwardRL(Array<NumType, 1> const& input);
-        
+
+        Array<NumType, 1> forwardGA(Array<NumType, 1> const& input);
+
         void endEpisodeRL();
+
+        void deepcopy(const Layer<NumType>* other);
+        void randomize(NumType strength);
         /*
         void print_weights(){
             matrixViewer(weights, weights.shape[0], weight_inner_size);

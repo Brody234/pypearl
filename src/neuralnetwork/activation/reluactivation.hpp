@@ -15,9 +15,11 @@ class ActivationReLU : public BaseActivation<NumType>
         std::vector<Array<NumType, 1>*> outputsRL;
     public:
         ActivationReLU(){
+            this->type = 0x01;
             minimum = 0.0f;
         }
         ActivationReLU(NumType minimumVal){
+            this->type = 0x01;
             minimum = minimumVal;
         }
 
@@ -30,6 +32,7 @@ class ActivationReLU : public BaseActivation<NumType>
             inputsRL(),                                        
             outputsRL()
         {
+            this->type = 0x01;
             inputsRL.reserve(other.inputsRL.size());
             outputsRL.reserve(other.outputsRL.size());
 

@@ -25,6 +25,18 @@ dis(-sqrt(6.0f/(prev_layer+this_layer)), sqrt(6.0f/(prev_layer+this_layer)))
 }
 
 template <typename NumType>
+Layer<NumType>::~Layer()
+{
+    for (auto p : inputsRL)   { delete p; }
+    for (auto p : outputsRL)  { delete p; }
+
+    inputsRL.clear();
+    outputsRL.clear();
+
+}
+
+
+template <typename NumType>
 Layer<NumType>::Layer(Layer&& other) noexcept
     : inputSave(std::move(other.inputSave)),
       momentum(other.momentum),
@@ -110,6 +122,23 @@ Array<NumType, 1> Layer<NumType>::forwardRL(Array<NumType, 1> const& input){
 }
 
 template <typename NumType>
+Array<NumType, 1> Layer<NumType>::forwardGA(Array<NumType, 1> const& input){
+    auto* in = new Array<NumType, 1>(weights.shape[0]);
+    auto* out = new Array<NumType, 1>(biases.len);
+
+    for(int i = 0; i < in->len; i++){
+        (*in)[i] = input[i];
+    }
+    for(int i = 0; i < biases.len; i++){
+        (*out)[i] = biases[i];
+        for(int j = 0; j < weights.shape[0]; j++){
+            (*out)[i] += (*in)[j] * weights[j][i];
+        }
+    }
+    return (*out); // FIX WHEN MOVE CONSTRUCTOR IS ADDED TO ARRAY CLASS I KNOW IT SHOULD ALREADY EXIST DON'T JUDGE ME
+}
+
+template <typename NumType>
 void Layer<NumType>::endEpisodeRL(){
     size_t epSize = inputsRL.size();
     size_t inArr[2] = {epSize, weights.shape[0]};
@@ -147,6 +176,32 @@ Array<NumType, 2> Layer<NumType>::backward(Array<NumType, 2>& dvalues){
     dinputs = dvalues * (weights.transpose());
     return dinputs;
 
+}
+
+template <typename NumType>
+void Layer<NumType>::randomize(NumType strength){
+    std::uniform_real_distribution<NumType> weightRandomizer(-strength, strength);
+    for(size_t i = 0; i < weights.shape[0]; i++){
+        for(size_t j = 0; j < weights.shape[1]; j++){
+            weights[i][j] += weightRandomizer(gen);
+        }
+    }
+    for(size_t i = 0; i <biases.len; i++){
+        biases[i] += weightRandomizer(gen);
+    }
+}
+
+template <typename NumType>
+void Layer<NumType>::deepcopy(const Layer<NumType>* other){
+    for(size_t i = 0; i < weights.shape[0]; i++){
+        for(size_t j = 0; j < weights.shape[1]; j++){
+            weights[i][j] = other->weights[i][j];
+        }
+    }
+    for(size_t i = 0; i < biases.len; i++){
+        biases[i] = other->biases[i];
+    }
+    return;
 }
 
 #endif
