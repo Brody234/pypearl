@@ -36,7 +36,9 @@ ext_modules = [
             "src/pybinding/activationbinding/relubinding.cpp",
             "src/pybinding/activationbinding/softmaxbinding.cpp",
             "src/pybinding/lossbinding/ccebinding.cpp",
-            "src/pybinding/optimizerbinding/sgdbinding.cpp"
+            "src/pybinding/optimizerbinding/sgdbinding.cpp",
+            "src/pybinding/modelbinding/modelbinding.cpp"
+
         ],
         include_dirs=[
             # so you can #include "matrix.hpp" and "matrixbinding.hpp"
@@ -51,7 +53,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.4.7",
+    version="0.4.8",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="An efficient Machine Learning Library",

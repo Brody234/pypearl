@@ -48,6 +48,14 @@ class Model
 
 };
 
+static std::uint16_t low16(size_t v);
+static std::uint32_t low32(size_t v);
+static std::uint16_t read16(const byte* data, size_t index);
+static std::uint32_t read32(const byte* data, size_t index);
+static std::uint64_t read64(const byte* data, size_t index);
+static void write32(std::vector<char>& output, dword32 bytes);
+static void write64(std::vector<char>& output, qword64 bytes);
+
 #include "model.tpp"
 
 #endif

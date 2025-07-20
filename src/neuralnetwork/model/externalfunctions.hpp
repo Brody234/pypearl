@@ -4,7 +4,7 @@
 #include "../layer/layer.hpp"
 
 template <typename NumType>
-void breedModels(Model<NumType> model1, Model<NumType> model2);
+Model<NumType>* breedModels(Model<NumType>& model1, Model<NumType>& model2, NumType prop);
 
 template <typename NumType>
 Model<NumType>* copyModel(Model<NumType>& models);

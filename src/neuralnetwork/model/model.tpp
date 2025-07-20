@@ -5,29 +5,29 @@
 
 #define handle
 
-std::uint16_t low16(size_t v)
+static std::uint16_t low16(size_t v)
 {
     return static_cast<std::uint16_t>(v & 0xFFFFu);   
 }
 
-std::uint32_t low32(size_t v)
+static std::uint32_t low32(size_t v)
 {
     return static_cast<std::uint32_t>(v & 0xFFFFFFFFu);   
 }
 
-std::uint16_t read16(const byte* data, size_t index){
+static std::uint16_t read16(const byte* data, size_t index){
     return static_cast<word>(static_cast<byte>(data[index])) | 
         (static_cast<word>(static_cast<byte>(data[index + 1])) << 8);
 }
 
-std::uint32_t read32(const byte* data, size_t index){
+static std::uint32_t read32(const byte* data, size_t index){
     return static_cast<dword32>(static_cast<byte>(data[index])) | 
         (static_cast<dword32>(static_cast<byte>(data[index + 1])) << 8) |
         (static_cast<dword32>(static_cast<byte>(data[index + 2])) << 16) |
         (static_cast<dword32>(static_cast<byte>(data[index + 3])) << 24);
 }
 
-std::uint64_t read64(const byte* data, size_t index){
+static std::uint64_t read64(const byte* data, size_t index){
     return static_cast<qword64>(static_cast<byte>(data[index])) | 
         (static_cast<qword64>(static_cast<byte>(data[index + 1])) << 8) |
         (static_cast<qword64>(static_cast<byte>(data[index + 2])) << 16) |
@@ -41,14 +41,14 @@ std::uint64_t read64(const byte* data, size_t index){
 
 
 
-void write32(std::vector<char>& output, dword32 bytes){
+static void write32(std::vector<char>& output, dword32 bytes){
     output.push_back(static_cast<byte>(bytes & 0xFF));
     output.push_back(static_cast<byte>((bytes >> 8) & 0xFF));
     output.push_back(static_cast<byte>((bytes >> 16) & 0xFF));
     output.push_back(static_cast<byte>((bytes >> 24) & 0xFF));
 }
 
-void write64(std::vector<char>& output, qword64 bytes){
+static void write64(std::vector<char>& output, qword64 bytes){
     output.push_back(static_cast<byte>(bytes & 0xFF));
     output.push_back(static_cast<byte>((bytes >> 8) & 0xFF));
     output.push_back(static_cast<byte>((bytes >> 16) & 0xFF));
@@ -89,6 +89,8 @@ void Model<NumType>::addLayer(Layer<NumType>& layer)
     layerNew->deepcopy(&layer);
     layers.push_back(layerNew);
 }
+
+
 
 template <typename NumType>
 void Model<NumType>::addReLU(ActivationReLU<NumType>& relu)
