@@ -142,17 +142,43 @@ PyGetSetDef PyArrayD1_getset[] = {
 
 PyTypeObject PyArrayD1Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.ArrayD1",
-    .tp_basicsize = sizeof(PyArrayD1Object),
-    .tp_dealloc   = (destructor)PyArrayD1_dealloc,
-    .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_str       = (reprfunc)PyArrayD1_str,
-    .tp_repr      = (reprfunc)PyArrayD1_str,
-    .tp_doc       = "1-D double array",
-    .tp_methods   = PyArrayD1_methods,
-    .tp_getset    = PyArrayD1_getset,
-    .tp_new       = PyArrayD1_new,
-    .tp_init      = (initproc)PyArrayD1_init,
+    "pypearl.ArrayD1",               // tp_name
+    sizeof(PyArrayD1Object),         // tp_basicsize
+    0,                               // tp_itemsize
+    (destructor)PyArrayD1_dealloc,   // tp_dealloc
+    0,                               // tp_vectorcall_offset  (or tp_print in very old CPython)
+    0,                               // tp_getattr
+    0,                               // tp_setattr
+    0,                               // tp_reserved / tp_compare
+    (reprfunc)PyArrayD1_str,         // tp_repr
+    0,                               // tp_as_number
+    0,                               // tp_as_sequence
+    0,                               // tp_as_mapping
+    0,                               // tp_hash
+    0,                               // tp_call
+    (reprfunc)PyArrayD1_str,         // tp_str
+    0,                               // tp_getattro
+    0,                               // tp_setattro
+    0,                               // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,              // tp_flags
+    "1-D double array",              // tp_doc
+    0,                               // tp_traverse
+    0,                               // tp_clear
+    0,                               // tp_richcompare
+    0,                               // tp_weaklistoffset
+    0,                               // tp_iter
+    0,                               // tp_iternext
+    PyArrayD1_methods,               // tp_methods
+    0,                               // tp_members
+    PyArrayD1_getset,                // tp_getset
+    0,                               // tp_base
+    0,                               // tp_dict
+    0,                               // tp_descr_get
+    0,                               // tp_descr_set
+    0,                               // tp_dictoffset
+    (initproc)PyArrayD1_init,        // tp_init
+    0,                               // tp_alloc
+    PyArrayD1_new                    // tp_new
 };
 
 
@@ -299,18 +325,45 @@ PyGetSetDef PyArrayD2_getset[] = {
 
 PyTypeObject PyArrayD2Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.ArrayD2",
-    .tp_basicsize = sizeof(PyArrayD2Object),
-    .tp_dealloc   = (destructor)PyArrayD2_dealloc,
-    .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_str       = (reprfunc)PyArrayD2_str,
-    .tp_repr      = (reprfunc)PyArrayD2_str,
-    .tp_doc       = "2-D double array",
-    .tp_methods   = PyArrayD2_methods,
-    .tp_getset    = PyArrayD2_getset,
-    .tp_new       = PyArrayD2_new,
-    .tp_init      = (initproc)PyArrayD2_init,
+    "pypearl.ArrayD2",               // tp_name
+    sizeof(PyArrayD2Object),         // tp_basicsize
+    0,                               // tp_itemsize
+    (destructor)PyArrayD2_dealloc,   // tp_dealloc
+    0,                               // tp_vectorcall_offset / tp_print
+    0,                               // tp_getattr
+    0,                               // tp_setattr
+    0,                               // tp_reserved / tp_compare
+    (reprfunc)PyArrayD2_str,         // tp_repr
+    0,                               // tp_as_number
+    0,                               // tp_as_sequence
+    0,                               // tp_as_mapping
+    0,                               // tp_hash
+    0,                               // tp_call
+    (reprfunc)PyArrayD2_str,         // tp_str
+    0,                               // tp_getattro
+    0,                               // tp_setattro
+    0,                               // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,              // tp_flags
+    "2-D double array",              // tp_doc
+    0,                               // tp_traverse
+    0,                               // tp_clear
+    0,                               // tp_richcompare
+    0,                               // tp_weaklistoffset
+    0,                               // tp_iter
+    0,                               // tp_iternext
+    PyArrayD2_methods,               // tp_methods
+    0,                               // tp_members
+    PyArrayD2_getset,                // tp_getset
+    0,                               // tp_base
+    0,                               // tp_dict
+    0,                               // tp_descr_get
+    0,                               // tp_descr_set
+    0,                               // tp_dictoffset
+    (initproc)PyArrayD2_init,        // tp_init
+    0,                               // tp_alloc
+    PyArrayD2_new                    // tp_new
 };
+
 PyMappingMethods PyArrayD2_as_mapping = {
     /* mp_length        */ (lenfunc)       PyArrayD2_length,       // len(x) → rows
     /* mp_subscript     */ (binaryfunc)    PyArrayD2_item,         // x[key]
@@ -436,18 +489,45 @@ PyGetSetDef PyArrayI2_getset[] = {
 
 PyTypeObject PyArrayI2Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.ArrayI2",
-    .tp_basicsize = sizeof(PyArrayI2Object),
-    .tp_dealloc   = (destructor)PyArrayI2_dealloc,
-    .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_str       = (reprfunc)PyArrayI2_str,
-    .tp_repr      = (reprfunc)PyArrayI2_str,
-    .tp_doc       = "2-D int array",
-    .tp_methods   = PyArrayI2_methods,
-    .tp_getset    = PyArrayI2_getset,
-    .tp_new       = PyArrayI2_new,
-    .tp_init      = (initproc)PyArrayI2_init,
+    "pypearl.ArrayI2",               // tp_name
+    sizeof(PyArrayI2Object),        // tp_basicsize
+    0,                               // tp_itemsize
+    (destructor)PyArrayI2_dealloc,  // tp_dealloc
+    0,                               // tp_vectorcall_offset or tp_print
+    0,                               // tp_getattr
+    0,                               // tp_setattr
+    0,                               // tp_reserved / tp_compare
+    (reprfunc)PyArrayI2_str,         // tp_repr
+    0,                               // tp_as_number
+    0,                               // tp_as_sequence
+    0,                               // tp_as_mapping
+    0,                               // tp_hash 
+    0,                               // tp_call
+    (reprfunc)PyArrayI2_str,         // tp_str
+    0,                               // tp_getattro
+    0,                               // tp_setattro
+    0,                               // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,              // tp_flags
+    "2-D int array",                 // tp_doc
+    0,                               // tp_traverse
+    0,                               // tp_clear
+    0,                               // tp_richcompare
+    0,                               // tp_weaklistoffset
+    0,                               // tp_iter
+    0,                               // tp_iternext
+    PyArrayI2_methods,               // tp_methods
+    0,                               // tp_members
+    PyArrayI2_getset,                // tp_getset
+    0,                               // tp_base
+    0,                               // tp_dict
+    0,                               // tp_descr_get
+    0,                               // tp_descr_set
+    0,                               // tp_dictoffset
+    (initproc)PyArrayI2_init,        // tp_init
+    0,                               // tp_alloc
+    PyArrayI2_new                    // tp_new
 };
+
 PyMappingMethods PyArrayI2_as_mapping = {
     /* mp_length        */ (lenfunc)       PyArrayI2_length,       // len(x) → rows
     /* mp_subscript     */ (binaryfunc)    PyArrayI2_item,         // x[key]

@@ -18,12 +18,12 @@ template <typename ArrType, std::size_t dims>
 class Array {
     static_assert(dims >=2, "Use 1 dimensional array.");
     private:
+
+    public:
         // Location of first index of first subarray.
         ArrType* data;
         // Distance between subarrays/length of subarrays, first index this level, following indices as follows.
         std::size_t* stride;
-
-    public:
 
         // Boolean to track parent array to prevent use after free bugs.
         bool owns;
@@ -167,6 +167,22 @@ class Array {
          */
         ArrType min();
 
+
+        /*
+         * A quicker but unstable internal use method for getting data.
+         */
+        ArrType fastGet2D(std::size_t i, std::size_t j) const;
+
+        /*
+         * A quicker way to change a value. Very unstable.
+         */
+        void fastSet2D(std::size_t i,  std::size_t j, ArrType val);
+
+        /*
+         * A quicker way to incrememnt a value. Very unstable.
+         */
+        void fastInc2D(std::size_t i,  std::size_t j, ArrType val);
+
 };
 
 /*
@@ -183,11 +199,12 @@ class Array {
 template <typename ArrType>
 class Array<ArrType, 1> {
     private:
+    public:
         // The first index of the data.
         ArrType* data;
         // Distance between datapoints, only used when this is a subarray.
         std::size_t stride;
-    public:
+
         // Boolean to know if this should be freeing memory.
         bool owns;
 
@@ -311,6 +328,7 @@ class Array<ArrType, 1> {
          * Returns the smallest element, recursive base case for nd min
          */
         ArrType min();
+
 
 
 };

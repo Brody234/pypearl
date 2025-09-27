@@ -103,15 +103,43 @@ PyGetSetDef PyReLUD_getset[] = {
 
 PyTypeObject PyReLUDType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.ReLU",
-    .tp_basicsize = sizeof(PyReLUDObject),
-    .tp_dealloc   = (destructor)PyReLUD_dealloc,
-    .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_doc       = "Neural Network Layer",
-    .tp_methods   = PyReLUD_methods,
-    .tp_getset    = PyReLUD_getset,
-    .tp_new       = PyReLUD_new,
-    .tp_init      = (initproc)PyReLUD_init,
+    "pypearl.ReLU",                          // tp_name
+    sizeof(PyReLUDObject),                   // tp_basicsize
+    0,                                       // tp_itemsize
+    (destructor)PyReLUD_dealloc,            // tp_dealloc
+    0,                                       // tp_vectorcall_offset / tp_print (deprecated)
+    0,                                       // tp_getattr
+    0,                                       // tp_setattr
+    0,                                       // tp_as_async / tp_compare
+    0,                                       // tp_repr
+    0,                                       // tp_as_number
+    0,                                       // tp_as_sequence
+    0,                                       // tp_as_mapping
+    0,                                       // tp_hash
+    0,                                       // tp_call
+    0,                                       // tp_str
+    0,                                       // tp_getattro
+    0,                                       // tp_setattro
+    0,                                       // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,                      // tp_flags
+    "Neural Network Layer",                 // tp_doc
+    0,                                       // tp_traverse
+    0,                                       // tp_clear
+    0,                                       // tp_richcompare
+    0,                                       // tp_weaklistoffset
+    0,                                       // tp_iter
+    0,                                       // tp_iternext
+    PyReLUD_methods,                         // tp_methods
+    0,                                       // tp_members
+    PyReLUD_getset,                          // tp_getset
+    0,                                       // tp_base
+    0,                                       // tp_dict
+    0,                                       // tp_descr_get
+    0,                                       // tp_descr_set
+    0,                                       // tp_dictoffset
+    (initproc)PyReLUD_init,                 // tp_init
+    0,                                       // tp_alloc
+    PyReLUD_new,                             // tp_new
 };
 
 

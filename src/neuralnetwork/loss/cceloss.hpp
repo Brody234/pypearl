@@ -80,8 +80,8 @@ class LossCCE : public BaseLoss<NumType>
             for (size_t i = 0; i < actualMatrix.shape[0]; i++) {
 
                 for (size_t j = 0; j < actualMatrix.shape[1]; j++) {
-                    NumType r = softouts[i][j];
-                    this->dvalues[i][j] = softouts[i][j];
+                    //NumType r = softouts[i][j];
+                    this->dvalues.data[i*this->dvalues.stride[0] + j*this->dvalues.stride[1]] = softouts.data[i*softouts.stride[0]+j*softouts.stride[1]];
 
                     if (1 == actualMatrix[i][j]) {
                         this->dvalues[i][j] -= 1.0f;
@@ -91,7 +91,7 @@ class LossCCE : public BaseLoss<NumType>
                 }
             }
 
-            return this->dvalues;
+            return (*(&this->dvalues));
 
         }
 

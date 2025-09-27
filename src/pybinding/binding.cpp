@@ -10,7 +10,7 @@
 
 PyObject *add(PyObject *self, PyObject *args){
     int x;
-    int y; 
+    int y;  
 
     PyArg_ParseTuple(args, "ii", &x, &y);
 

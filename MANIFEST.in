@@ -2,6 +2,8 @@
 
 # include all your headers and sources under src/matrix
 recursive-include src/matrix *.hpp *.tpp *.ipp
+recursive-include src/neuralnetwork *.hpp *.tpp *.ipp
+
 
 # include your binding sources
 recursive-include src/pybinding *.cpp *.hpp

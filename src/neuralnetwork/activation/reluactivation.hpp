@@ -59,9 +59,7 @@ class ActivationReLU : public BaseActivation<NumType>
 
 
         Array<NumType, 2> forward(Array<NumType, 2>& inputs, size_t samples, size_t prev_layer) override{
-            if(samples <= 0){
-                return Array<NumType, 2>();
-            }
+            
             saved_samples = inputs.shape[0];
             saved_prev_layer = inputs.shape[1];
             size_t shape[2] = {saved_samples, saved_prev_layer};
@@ -69,12 +67,12 @@ class ActivationReLU : public BaseActivation<NumType>
             this->outputs = Array<NumType, 2>(shape);
             for(size_t i = 0; i < saved_samples; i++){
                 for(size_t j = 0; j < saved_prev_layer; j++){
-                    saved_inputs[i][j] = inputs[i][j];
-                    if(inputs[i][j] < minimum){
-                        this->outputs[i][j] = minimum;
+                    saved_inputs.fastSet2D(i, j, inputs.fastGet2D(i, j));
+                    if(inputs.fastGet2D(i, j) < minimum){
+                        this->outputs.fastSet2D(i, j, minimum);
                     }
                     else{
-                        this->outputs[i][j] = inputs[i][j];
+                        this->outputs.fastSet2D(i,j, inputs.fastGet2D(i,j));
                     }
                 }
             }

@@ -37,12 +37,12 @@ PyCCED_forward(PyCCEDObject *self, PyObject *args, PyObject *kwds){
     PyArrayD2Object *output_obj = NULL;  
     PyArrayI2Object *actual_obj = NULL;  
 
-    static char *kwlist[] = { "output", "actual", NULL };
+    static const char *kwlist[] = { "output", "actual", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds,
             "O!O!",                   /* two objects, both must be ArrayD2 */
-            kwlist,
+            const_cast<char **>(kwlist),
             &PyArrayD2Type, &output_obj,
             &PyArrayI2Type, &actual_obj))
     {
@@ -66,13 +66,13 @@ static PyObject *
 PyCCED_backward(PyCCEDObject *self, PyObject *args, PyObject *kwds){
     PyArrayD2Object *output_obj = NULL;  
     PyArrayI2Object *actual_obj = NULL;  
-
-    static char *kwlist[] = { "output", "actual", NULL };
+    
+    static const char *kwlist[] = { "output", "actual", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds,
             "O!O!",                   /* two objects, both must be ArrayD2 */
-            kwlist,
+            const_cast<char **>(kwlist),
             &PyArrayD2Type, &output_obj,
             &PyArrayI2Type, &actual_obj))
     {
@@ -106,15 +106,43 @@ PyGetSetDef PyCCED_getset[] = {
 
 PyTypeObject PyCCEDType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name      = "pypearl.CCED",
-    .tp_basicsize = sizeof(PyCCEDObject),
-    .tp_dealloc   = (destructor)PyCCED_dealloc,
-    .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_doc       = "Neural Network CCED",
-    .tp_methods   = PyCCED_methods,
-    .tp_getset    = PyCCED_getset,
-    .tp_new       = PyCCED_new,
-    .tp_init      = (initproc)PyCCED_init,
+    "pypearl.CCED",                   // tp_name
+    sizeof(PyCCEDObject),            // tp_basicsize
+    0,                               // tp_itemsize
+    (destructor)PyCCED_dealloc,      // tp_dealloc
+    0,                               // tp_vectorcall_offset / tp_print (deprecated)
+    0,                               // tp_getattr
+    0,                               // tp_setattr
+    0,                               // tp_reserved / tp_compare
+    0,                               // tp_repr
+    0,                               // tp_as_number
+    0,                               // tp_as_sequence
+    0,                               // tp_as_mapping
+    0,                               // tp_hash 
+    0,                               // tp_call
+    0,                               // tp_str
+    0,                               // tp_getattro
+    0,                               // tp_setattro
+    0,                               // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,              // tp_flags
+    "Neural Network CCED",           // tp_doc
+    0,                               // tp_traverse
+    0,                               // tp_clear
+    0,                               // tp_richcompare
+    0,                               // tp_weaklistoffset
+    0,                               // tp_iter
+    0,                               // tp_iternext
+    PyCCED_methods,                  // tp_methods
+    0,                               // tp_members
+    PyCCED_getset,                   // tp_getset
+    0,                               // tp_base
+    0,                               // tp_dict
+    0,                               // tp_descr_get
+    0,                               // tp_descr_set
+    0,                               // tp_dictoffset
+    (initproc)PyCCED_init,           // tp_init
+    0,                               // tp_alloc
+    PyCCED_new                       // tp_new
 };
 
 #endif

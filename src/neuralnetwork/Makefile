@@ -1,12 +1,31 @@
-CXX = /opt/homebrew/opt/llvm/bin/clang++
-SDK_PATH = $(shell xcrun --show-sdk-path)
-CXXFLAGS = -std=c++20 -fsanitize=address,leak -shared-libasan -g -isysroot $(SDK_PATH) -stdlib=libc++
+# ---------- toolchain --------------------------------------------------------
+CXX       := /opt/homebrew/opt/llvm/bin/clang++   # brew llvm
+SDK_PATH  := $(shell xcrun --show-sdk-path)
 
-test:
-	$(CXX) $(CXXFLAGS) -o testcode testcode.cpp
+# ---------- third-party libs -------------------------------------------------
+OPENBLAS := $(shell /opt/homebrew/bin/brew --prefix openblas)
 
-test_no_debug:
-	$(CXX) -std=c++20 -g -o testcode testcode.cpp
+# ---------- compile / link flags --------------------------------------------
+CXXFLAGS  := -std=c++20 -g \
+             -fsanitize=address,leak \
+             -isysroot $(SDK_PATH) -stdlib=libc++ \
+             -I$(OPENBLAS)/include            #  cblas.h
 
-tutorial:
-	$(CXX) -std=c++20 -g -o tutorial tutorial.cpp
+LDFLAGS   := -fsanitize=address,leak \
+             -L$(OPENBLAS)/lib -lopenblas     #  libopenblas.dylib
+
+# ---------- sources / targets ------------------------------------------------
+SRC       := testcode.cpp        # add more .cpp files here
+OBJ       := $(SRC:.cpp=.o)
+TARGET    := testcode                # final executable name
+
+# ---------- build rules ------------------------------------------------------
+$(TARGET): $(OBJ)
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+.PHONY: clean
+clean:
+	rm -f $(OBJ) $(TARGET)

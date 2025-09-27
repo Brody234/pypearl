@@ -7,10 +7,10 @@
 #include "../activation/softmaxactivation.hpp"
 #include <stdint.h>
 
-typedef u_int8_t byte;
-typedef u_int16_t word;
-typedef u_int32_t dword32;
-typedef u_int64_t qword64;
+typedef uint8_t byte;
+typedef uint16_t word;
+typedef uint32_t dword32;
+typedef uint64_t qword64;
 
 
 
@@ -26,8 +26,8 @@ class Model
         
 
     public:
-        std::vector<LayerT*> layers;       
-        std::vector<ActT*>   activations; 
+        std::vector<LayerT* > layers;       
+        std::vector<ActT* >   activations; 
 
         Model();
         ~Model();

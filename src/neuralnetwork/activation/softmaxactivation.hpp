@@ -4,6 +4,7 @@
 #include <iostream>
 #include "../utilities/matrixutility.hpp"
 #include "baseactivation.hpp"
+#include "../../utilities/stopwatch/stopwatch.hpp"
 
 template <typename NumType = float>
 class ActivationSoftMax : public BaseActivation<NumType>
@@ -88,6 +89,8 @@ class ActivationSoftMax : public BaseActivation<NumType>
             //matrixViewer(dinputs, samples, 2);
             return this->dinputs;
         }
+
+
         void print() override{
             std::cout << " Softmax " << std::endl;
         }

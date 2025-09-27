@@ -2,6 +2,7 @@
 #define MODEL
 
 #include "model.hpp"
+#include <bit>
 
 #define handle
 
@@ -198,13 +199,13 @@ void Model<NumType>::saveModel(const char *path)
             for(dword32 j = 0; j < prev_size; j++){
                 for(dword32 k = 0; k < cur_size; k++){
                     double d = layers[i]->weights[j][k];
-                    qword64 weight = std::bit_cast<qword64>(d);
+                    qword64 weight = std::bit_cast<qword64 >(d);
                     write64(output, weight);
                 }
             }
             for(dword32 k = 0; k < cur_size; k++){
                 double d = layers[i]->biases[k];
-                qword64 bias = std::bit_cast<qword64>(d);
+                qword64 bias = std::bit_cast<qword64 >(d);
                 write64(output, bias);
             }
             prev_size = cur_size;
@@ -217,13 +218,13 @@ void Model<NumType>::saveModel(const char *path)
             for(dword32 j = 0; j < prev_size; j++){
                 for(dword32 k = 0; k < cur_size; k++){
                     float f = layers[i]->weights[j][k];
-                    dword32 weight = std::bit_cast<std::uint32_t>(f);
+                    dword32 weight = std::bit_cast<dword32 >(f);
                     write32(output, weight);
                 }
             }
             for(dword32 k = 0; k < cur_size; k++){
                 float f = layers[i]->biases[k];
-                dword32 bias = std::bit_cast<dword32>(f);
+                dword32 bias = std::bit_cast<dword32 >(f);
                 write32(output, bias);
             }
             prev_size = cur_size;
@@ -320,13 +321,13 @@ int Model<NumType>::loadModel(const char *path)
         if(is64){
             for(dword32 j = 0; j < prev_size; j++){
                 for(dword32 k = 0; k < cur_size; k++){
-                    layer->weights[j][k] = std::bit_cast<double>(read64(data, i));
+                    layer->weights[j][k] = std::bit_cast<double >(read64(data, i));
                     
                     i += sizeof(NumType);
                 }
             }
             for(dword32 k = 0; k < cur_size; k++){
-                layer->biases[k] = std::bit_cast<double>(read64(data, i));
+                layer->biases[k] = std::bit_cast<double >(read64(data, i));
                 i+= sizeof(NumType);
 
             }
@@ -335,13 +336,13 @@ int Model<NumType>::loadModel(const char *path)
         else{
             for(dword32 j = 0; j < prev_size; j++){
                 for(dword32 k = 0; k < cur_size; k++){
-                    layer->weights[j][k] = std::bit_cast<float>(read32(data, i));
+                    layer->weights[j][k] = std::bit_cast<float >(read32(data, i));
                     
                     i += sizeof(NumType);
                 }
             }
             for(dword32 k = 0; k < cur_size; k++){
-                layer->biases[k] = std::bit_cast<float>(read32(data, i));
+                layer->biases[k] = std::bit_cast<float >(read32(data, i));
                 i+= sizeof(NumType);
 
             }

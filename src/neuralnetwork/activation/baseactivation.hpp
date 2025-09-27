@@ -2,7 +2,9 @@
 #define BASEACTIVATION_H
 #include "../../matrix/matrix.hpp"
 
-typedef u_int8_t byte;
+#include <cstdint>
+
+typedef uint8_t byte;
 
 template <typename NumType = float>
 class BaseActivation {

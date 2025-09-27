@@ -164,6 +164,21 @@ Array<ArrType, dims-1> Array<ArrType, dims>::operator[](std::size_t idx){
     }
 }
 
+template <typename ArrType, std::size_t dims>
+ArrType Array<ArrType, dims>::fastGet2D( std::size_t i,  std::size_t j) const{
+    return data[i*stride[0]+j*stride[1]];
+}
+
+template <typename ArrType, std::size_t dims>
+void Array<ArrType, dims>::fastSet2D(std::size_t i,  std::size_t j, ArrType val){
+    data[i*stride[0]+j*stride[1]] = val;
+}
+
+template <typename ArrType, std::size_t dims>
+void Array<ArrType, dims>::fastInc2D(std::size_t i,  std::size_t j, ArrType val){
+    data[i*stride[0]+j*stride[1]] += val;
+}
+
 // same as previous, but const
 template <typename ArrType, std::size_t dims>
 Array<ArrType, dims-1> Array<ArrType, dims>::operator[](std::size_t idx) const{
