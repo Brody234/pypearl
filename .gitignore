@@ -41,7 +41,10 @@ src/matrix/Makefile
 #Neural Network Stuff
 src/neuralnetwork/.vscode/
 src/neuralnetwork/testcode.cpp
+src/neuralnetwork/testcode.o
 src/neuralnetwork/testcode
+src/neuralnetwork/testactivation.cpp
+src/neuralnetwork/testactivation.o
 src/neuralnetwork/testcode.dSYM/
 src/neuralnetwork/samplecode
 src/neuralnetwork/samplecode.dSYM/

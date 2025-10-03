@@ -183,6 +183,7 @@ class Array {
          */
         void fastInc2D(std::size_t i,  std::size_t j, ArrType val);
 
+
 };
 
 /*
