@@ -31,6 +31,7 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
             }
             //return outputs;
     }
+    
     // ReLU 0 Minimum
     if(layer.type == 0x1){
             void* mem = std::malloc(sizeof(Array<NumType,2>));
@@ -57,6 +58,7 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
             }
             return layer.outputs;
     }
+    
     // Softmax
     if(layer.type == 0x2){
             
@@ -101,7 +103,8 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
             return layer.outputs;
 
     }
-
+   
+    // Leaky ReLU
     if(layer.type == 0x3){
         
         //saved_samples = inputs.shape[0];
@@ -140,13 +143,130 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
 
     }
 
+    // Copied Linear
+    if(layer.type == 0x4){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
 
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+        for(size_t i = 0; i < inputs->shape[0]; i ++){
+            for(size_t j = 0; j < inputs->shape[1]; j++){
+                layer.outputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+                layer.saved_inputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+            }
+        }
+        return layer.outputs;
+    }
+    
+    // Flow Linear
+    if(layer.type == 0x5){
+        return inputs;
+    }
+    
+    // Sigmoid
+    if(layer.type == 0x6){
+
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+        for(int i = 0; i < inputs->shape[0]; i++){
+            for(int j = 0; j < inputs->shape[1]; j++){
+                layer.outputs->fastSet2D(i, j, 1/(1+exp(-inputs->fastGet2D(i, j))));
+            }
+        }
+
+        return layer.outputs;
+    }
+    
+    // Step
+    if(layer.type == 0x7){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+
+
+        for(int i = 0; i < inputs->shape[0]; i++){
+            for(int j = 0; j < inputs->shape[1]; j++){
+                if(inputs->fastGet2D(i, j) < layer.relmin){
+                    layer.outputs->fastSet2D(i, j, layer.alpha);
+                }
+                else{
+                    layer.outputs->fastSet2D(i, j, layer.beta);
+                }
+            }
+        }
+        return layer.outputs;
+
+    }
+
+    // Single Alpha PReLU
+    if(layer.type == 0x8){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+        for(int i = 0; i < inputs->shape[0]; i++){
+            for(int j = 0; j < inputs->shape[1]; j++){
+                layer.saved_inputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+                if(inputs->fastGet2D(i, j) < layer.relmin){
+                    layer.outputs->fastSet2D(i, j, (inputs->fastGet2D(i, j)-layer.relmin)*layer.alpha+layer.relmin);
+                }
+                else{
+                    layer.outputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+                }
+            }
+        }
+        return layer.outputs;
+    }
+
+    // Array Length Alpha PReLU
+    if(layer.type == 0x9){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+    }
+
+    return nullptr;
 }
 
 
 template <typename NumType>
 Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLayer<NumType>& layer){
-
+    
+    // ReLU Arbitrary Minimum
     if(layer.type == 0x0){
 
         void* mem = std::malloc(sizeof(Array<NumType,2>));
@@ -168,6 +288,8 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         }
         return layer.dinputs;
     }
+    
+    // ReLU 0 Minimum
     if(layer.type == 0x1){
 
         void* mem = std::malloc(sizeof(Array<NumType,2>));
@@ -190,6 +312,7 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         return layer.dinputs;
     }
 
+    // Softmax   
     if(layer.type == 0x2){
         void* mem = std::malloc(sizeof(Array<NumType,2>));
         if (!mem) throw std::bad_alloc{};
@@ -202,7 +325,8 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         }
         return layer.dinputs;
     }
-
+    
+    // Leaky ReLU
     if(layer.type == 0x3){
         //size_t dinputsShape[2] = {saved_samples, saved_prev_layer};
         //this->dinputs = Array<NumType, 2>(dinputsShape);
@@ -226,8 +350,104 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         }
         return layer.dinputs;
     }
+    
+    // Copied Linear
+    if(layer.type == 0x4){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+        for(size_t i = 0; i < layer.saved_inputs->shape[0]; i++){
+            for(size_t j = 0; j < layer.saved_inputs->shape[1]; j++){
+                layer.dinputs->fastSet2D(i, j, dvalues->fastGet2D(i, j));
+            }
+        }
+        return layer.dinputs;
+    }
+    
+    // Flow Linear
+    if(layer.type == 0x5){
+        return dvalues;
+    }
+    
+    // Sigmoid
+    if(layer.type == 0x6){
+        //size_t dinputsShape[2] = {saved_samples, saved_prev_layer};
+        //this->dinputs = Array<NumType, 2>(dinputsShape);
+
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+
+        for(int i = 0; i < layer.saved_inputs->shape[0]; i++){
+            for(int j = 0; j < layer.saved_inputs->shape[1]; j++){
+                layer.dinputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j )*(1-layer.outputs->fastGet2D(i, j))*dvalues->fastGet2D(i, j));
+            }
+        }
+        return layer.dinputs;
+    }
+    
+    // Step
+    if(layer.type == 0x7){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+        for(int i = 0; i < layer.saved_inputs->shape[0]; i++){
+            for(int j = 0; j < layer.saved_inputs->shape[1]; j++){
+                // OH IF x=relmin DERIVATIVE IS UNDEFINED IN STEP???? REALLY???? OK. THEN BY SOME CANCELLATION STUFF THERE IS NO WAY TO KNOW IF X AND THE OTHER THING ARE ACTUALLY EQUAL BY SOME FLOATING POINT APPROXIMATION OF 2 VALUES SO PLEASE LEAVE ME ALONE.
+                layer.dinputs->fastSet2D(i, j, 0);
+            }
+        }
+        return layer.dinputs;
+
+    }
+
+    // Single Alpha PReLU
+    if(layer.type == 0x8){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+        layer.beta = 0.0f;
+        for(int i = 0; i < layer.saved_inputs->shape[0]; i++){
+            for(int j = 0; j < layer.saved_inputs->shape[1]; j++){
+                if(layer.saved_inputs->fastGet2D(i, j) < layer.relmin){
+                    layer.dinputs->fastSet2D(i, j, dvalues->fastGet2D(i, j)*layer.alpha);
+                    layer.beta += dvalues->fastGet2D(i, j)*(layer.saved_inputs->fastGet2D(i, j)-layer.relmin);
+                }
+                else{
+                    layer.dinputs->fastSet2D(i, j, dvalues->fastGet2D(i,j));
+                }
+            }
+        }
+        return layer.dinputs;
+    }
+
+    // Array Length Alpha PReLU
+    if(layer.type == 0x9){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+    }
+
+    return nullptr;
 }
 
+
+// Clears Logits
 template <typename NumType>
 void freeActivationLogits(ActivationLayer<NumType>& layer){
     if(layer.outputOwnership){
@@ -237,6 +457,12 @@ void freeActivationLogits(ActivationLayer<NumType>& layer){
     delete layer.saved_inputs;
     delete layer.dinputs;
 }
+
+// Update Tuneable Params
+template <typename NumType>
+void updateParams(ActivationLayer<NumType>& layer){
+}
+
 
 
 #include "arbitraryactivation.tpp"
