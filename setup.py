@@ -6,6 +6,27 @@ from setuptools.command.build_ext import build_ext
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+def _brew_prefix(pkg: str) -> str | None:
+    try:
+        return subprocess.check_output(["brew", "--prefix", pkg], text=True).strip()
+    except Exception:
+        return None
+
+def _openblas_paths():
+    # Prefer explicit env if set (works cross-platform)
+    ob_dir = os.environ.get("OPENBLAS_DIR")
+    if ob_dir:
+        return os.path.join(ob_dir, "include"), os.path.join(ob_dir, "lib")
+
+    # macOS Homebrew OpenBLAS
+    if sys.platform == "darwin":
+        p = _brew_prefix("openblas")
+        if p:
+            return os.path.join(p, "include"), os.path.join(p, "lib")
+
+    # Fallback: nothing found
+    return None, None
+
 class BuildExt(build_ext):
     def build_extensions(self):
         compiler = self.compiler.compiler_type
@@ -19,25 +40,35 @@ class BuildExt(build_ext):
             cpp_args = ["-std=c++20"]
             link_args = []
 
-            # macOS-specific SDK configuration
+            # macOS-specific: only add stdlib flag
+            # Let Python handle SDK and deployment target
             if sys.platform == "darwin":
-                sdk_path = subprocess.check_output(
-                    ["xcrun", "--sdk", "macosx", "--show-sdk-path"]
-                ).decode().strip()
-                cpp_args += [
-                    "-stdlib=libc++",
-                    "-mmacosx-version-min=10.9",
-                    "-isysroot", sdk_path,
-                ]
-                link_args += [
-                    "-stdlib=libc++",
-                    "-mmacosx-version-min=10.9",
-                    "-isysroot", sdk_path,
-                ]
+                cpp_args += ["-stdlib=libc++"]
+                link_args += ["-stdlib=libc++"]
 
+        # --- OpenBLAS wiring ---
+        ob_inc, ob_lib = _openblas_paths()
+        if ob_inc and ob_lib:
+            print(f"Using OpenBLAS include: {ob_inc}")
+            print(f"Using OpenBLAS libdir: {ob_lib}")
+            # Add to every extension
+            for ext in self.extensions:
+                ext.include_dirs = list(set((ext.include_dirs or []) + [ob_inc]))
+                ext.library_dirs = list(set((ext.library_dirs or []) + [ob_lib]))
+                ext.libraries = list(set((ext.libraries or []) + ["openblas"]))
+                # help dynamic loader find the dylib at runtime
+                if sys.platform == "darwin":
+                    ext.extra_link_args = list(set((getattr(ext, "extra_link_args", []) or []) + [
+                        f"-Wl,-rpath,{ob_lib}"
+                    ]))
+        else:
+            print("WARNING: OpenBLAS not found. Set OPENBLAS_DIR or install via Homebrew.")
+            print("  e.g., brew install openblas")
+
+        # Apply compile/link flags
         for ext in self.extensions:
-            ext.extra_compile_args = cpp_args
-            ext.extra_link_args = link_args
+            ext.extra_compile_args = list(set((getattr(ext, "extra_compile_args", []) or []) + cpp_args))
+            ext.extra_link_args    = list(set((getattr(ext, "extra_link_args",    []) or []) + link_args))
 
         super().build_extensions()
 
@@ -53,6 +84,7 @@ ext_modules = [
             "src/pybinding/lossbinding/ccebinding.cpp",
             "src/pybinding/optimizerbinding/sgdbinding.cpp",
             "src/pybinding/modelbinding/modelbinding.cpp",
+            
         ],
         include_dirs=[
             os.path.join(here, "src"),
@@ -73,9 +105,7 @@ setup(
     ext_modules=ext_modules,
     cmdclass={"build_ext": BuildExt},
     packages=find_packages(),
-    package_data={
-        "pypearl": ["*.pyi", "py.typed"],
-    },
+    package_data={"pypearl": ["*.pyi", "py.typed"]},
     include_package_data=True,
     zip_safe=False,
     python_requires=">=3.7",

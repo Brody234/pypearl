@@ -9,7 +9,6 @@
 template <typename NumType>
 Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<NumType>& layer){
     // Switch to binary search after 4-6 activations are finished
-
     // ReLU Arbitrary Minimum
     if(layer.type == 0x0){
             void* mem = std::malloc(sizeof(Array<NumType,2>));
@@ -17,19 +16,26 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
             auto* p = new (mem) Array<NumType,2>(inputs->shape); 
             layer.saved_inputs = p;
 
-            Array<NumType, 2> outputs = Array<NumType, 2>(inputs->shape);
+
+            void* memout = std::malloc(sizeof(Array<NumType,2>));
+            if (!memout) throw std::bad_alloc{};
+            auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+            layer.outputs = pout;
+
+
+            //Array<NumType, 2> outputs = Array<NumType, 2>(inputs->shape);
             for(size_t i = 0; i < inputs->shape[0]; i++){
                 for(size_t j = 0; j < inputs->shape[1]; j++){
                     layer.saved_inputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
                     if(inputs->fastGet2D(i, j) < layer.relmin){
-                        outputs.fastSet2D(i, j, layer.relmin);
+                        layer.outputs->fastSet2D(i, j, layer.relmin);
                     }
                     else{
-                        outputs.fastSet2D(i,j, inputs->fastGet2D(i,j));
+                        layer.outputs->fastSet2D(i,j, inputs->fastGet2D(i,j));
                     }
                 }
             }
-            //return outputs;
+            return layer.outputs;
     }
     
     // ReLU 0 Minimum
@@ -257,6 +263,48 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
         auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
         layer.outputs = pout;
 
+
+    }
+
+    // Slope Linear
+    if(layer.type == 0xa){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+        for(size_t i = 0; i < inputs->shape[0]; i ++){
+            for(size_t j = 0; j < inputs->shape[1]; j++){
+                layer.outputs->fastSet2D(i, j, inputs->fastGet2D(i, j)*layer.alpha);
+                layer.saved_inputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+            }
+        }
+        return layer.outputs;
+    }
+    
+    if(layer.type == 0xb){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+        for(size_t i = 0; i < inputs->shape[0]; i ++){
+            for(size_t j = 0; j < inputs->shape[1]; j++){
+                layer.outputs->fastSet2D(i, j, inputs->fastGet2D(i, j)*layer.alpha+layer.beta);
+                layer.saved_inputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+            }
+        }
+        return layer.outputs;
     }
 
     return nullptr;
@@ -442,6 +490,23 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         layer.dinputs = p;
 
     }
+
+    // Slope Linear and Slope Linear Offset (because y=mx+b dy/dx = m regardless of b == 0 || b != 0 (or I'm just bad at calc and wrote a bug))
+    if(layer.type == 0xa || layer.type == 0xb){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+        for(size_t i = 0; i < layer.saved_inputs->shape[0]; i++){
+            for(size_t j = 0; j < layer.saved_inputs->shape[1]; j++){
+                layer.dinputs->fastSet2D(i, j, dvalues->fastGet2D(i, j)*layer.alpha);
+            }
+        }
+        return layer.dinputs;
+    }
+
 
     return nullptr;
 }

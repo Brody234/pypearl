@@ -4,6 +4,7 @@
 #include "layerbinding.hpp"
 #include "./activationbinding/relubinding.hpp"
 #include "./activationbinding/softmaxbinding.hpp"
+#include "./activationbinding/arbitraryactivationbinding.hpp"
 #include "./lossbinding/ccebinding.hpp"
 #include "./optimizerbinding/sgdbinding.hpp"
 #include "./modelbinding/modelbinding.hpp"
@@ -115,6 +116,56 @@ PyInit__pypearl(void)
     Py_INCREF(&PyModelType);
     PyModule_AddObject(m, "Model", (PyObject*)&PyModelType);
 
+
+    if (PyType_Ready(&PyAL64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyAL64Type);
+    PyModule_AddObject(m, "TestActivation", (PyObject*)&PyAL64Type);
+
+    if (PyType_Ready(&PyRELU64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyRELU64Type);
+    PyModule_AddObject(m, "ReLU64", (PyObject*)&PyRELU64Type);
+
+    if (PyType_Ready(&PyLinear64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyLinear64Type);
+    PyModule_AddObject(m, "Linear64", (PyObject*)&PyLinear64Type);
+
+    if (PyType_Ready(&PySigmoid64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PySigmoid64Type);
+    PyModule_AddObject(m, "Sigmoid64", (PyObject*)&PySigmoid64Type);
+
+    if (PyType_Ready(&PyLeakyReLU64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyLeakyReLU64Type);
+    PyModule_AddObject(m, "LeakyReLU64", (PyObject*)&PyLeakyReLU64Type);
+
+    if (PyType_Ready(&PyStep64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyStep64Type);
+    PyModule_AddObject(m, "Step64", (PyObject*)&PyStep64Type);
+
+
+    if (PyType_Ready(&PySoftmax64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PySoftmax64Type);
+    PyModule_AddObject(m, "Softmax64", (PyObject*)&PySoftmax64Type);
 
     return m; 
 }  

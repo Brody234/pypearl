@@ -19,6 +19,8 @@ struct ActivationLayer {
      * 0x7: Step
      * 0x8: Single Parameter PReLU
      * 0x9: Array of Parameter Alpha's PReLU
+     * 0xa: Slope Linear
+     * 0xb: y=mx+b Linear
      */
     uint8_t type;
     Array<NumType,2>* saved_inputs;
@@ -31,10 +33,10 @@ struct ActivationLayer {
     Array<NumType, 2>* outputs;
     bool outputOwnership;
 
-    // Used in Leaky ReLU as leaking param, using in step as the MINIMUM
+    // Used in Leaky ReLU as leaking param, using in step as the MINIMUM, Slope in slope linears
     NumType alpha;
 
-    // Used in step as the maximum, derivative of alpha in PReLU
+    // Used in step as the maximum, derivative of alpha in PReLU, offset in slope + beta linears
     NumType beta;
 };
 

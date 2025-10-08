@@ -10,7 +10,7 @@
 #include <chrono>
 #include <random>
 
-auto make_seed() {
+inline auto make_seed() {
     std::random_device rd; 
     auto time = std::chrono::high_resolution_clock::now()
                     .time_since_epoch().count();
