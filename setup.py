@@ -31,6 +31,10 @@ class BuildExt(build_ext):
     def build_extensions(self):
         compiler = self.compiler.compiler_type
         print(f"Detected compiler: {compiler}")
+        
+        # Force ARM64 only on macOS to avoid NEON compilation issues
+        if sys.platform == "darwin":
+            print("Building for ARM64 only (Apple Silicon)")
 
         # Default C++20 args
         if compiler == "msvc":
@@ -40,11 +44,10 @@ class BuildExt(build_ext):
             cpp_args = ["-std=c++20"]
             link_args = []
 
-            # macOS-specific: only add stdlib flag
-            # Let Python handle SDK and deployment target
+            # macOS-specific: stdlib but NOT arch here (add later to preserve pairing)
             if sys.platform == "darwin":
-                cpp_args += ["-stdlib=libc++"]
-                link_args += ["-stdlib=libc++"]
+                cpp_args.append("-stdlib=libc++")
+                link_args.append("-stdlib=libc++")
 
         # --- OpenBLAS wiring ---
         ob_inc, ob_lib = _openblas_paths()
@@ -67,8 +70,18 @@ class BuildExt(build_ext):
 
         # Apply compile/link flags
         for ext in self.extensions:
-            ext.extra_compile_args = list(set((getattr(ext, "extra_compile_args", []) or []) + cpp_args))
-            ext.extra_link_args    = list(set((getattr(ext, "extra_link_args",    []) or []) + link_args))
+            # Start with existing flags
+            existing_compile = getattr(ext, "extra_compile_args", []) or []
+            existing_link = getattr(ext, "extra_link_args", []) or []
+            
+            # Combine with new flags (use list to preserve duplicates of rpath)
+            ext.extra_compile_args = existing_compile + cpp_args
+            ext.extra_link_args = existing_link + link_args
+            
+            # Add arch flags AFTER to preserve -arch arm64 pairing
+            if sys.platform == "darwin":
+                ext.extra_compile_args.extend(["-arch", "arm64"])
+                ext.extra_link_args.extend(["-arch", "arm64"])
 
         super().build_extensions()
 
@@ -84,7 +97,6 @@ ext_modules = [
             "src/pybinding/lossbinding/ccebinding.cpp",
             "src/pybinding/optimizerbinding/sgdbinding.cpp",
             "src/pybinding/modelbinding/modelbinding.cpp",
-            
         ],
         include_dirs=[
             os.path.join(here, "src"),
@@ -96,7 +108,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.5.1",
+    version="0.6.3rm -rf build/ dist/ *.egg-info",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="An efficient Machine Learning Library",

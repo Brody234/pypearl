@@ -15,7 +15,7 @@ LDFLAGS   := -fsanitize=address,leak \
              -L$(OPENBLAS)/lib -lopenblas     #  libopenblas.dylib
 
 # ---------- sources / targets ------------------------------------------------
-SRC       := testcode.cpp        # add more .cpp files here
+SRC       := testactivation.cpp        # add more .cpp files here
 OBJ       := $(SRC:.cpp=.o)
 TARGET    := testcode                # final executable name
 

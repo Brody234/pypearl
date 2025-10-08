@@ -5,6 +5,7 @@
 #include "../../matrix/matrix.hpp"
 #include <cstdint>
 
+// WHEN WRAPPED TO PYTHON YOU DO NOT OWN OUTPUTS OUTPUTS WILL BE KILLED BY THE PYTHON INTERPRETER IF LOGITS = OUTPUTS SAVE INPUTS IF AN ACTIVATION NEEDS BOTH SAVE BOTH
 
 template <typename NumType>
 Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<NumType>& layer){
@@ -104,6 +105,7 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
                 for(int j = 0; j < inputs->shape[1]; j++){
                     
                     layer.outputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j)/(sum+1e-7));
+                    layer.saved_inputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j));
                 }
             }
             return layer.outputs;
@@ -191,6 +193,7 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
         for(int i = 0; i < inputs->shape[0]; i++){
             for(int j = 0; j < inputs->shape[1]; j++){
                 layer.outputs->fastSet2D(i, j, 1/(1+exp(-inputs->fastGet2D(i, j))));
+                layer.saved_inputs->fastSet2D(i, j, layer.outputs->fastGet2D(i, j));
             }
         }
 
@@ -307,6 +310,34 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
         return layer.outputs;
     }
 
+    if(layer.type == 0xc){
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(inputs->shape); 
+        layer.saved_inputs = p;
+
+
+        void* memout = std::malloc(sizeof(Array<NumType,2>));
+        if (!memout) throw std::bad_alloc{};
+        auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
+        layer.outputs = pout;
+
+
+        for(size_t i = 0; i < inputs->shape[0]; i++){
+            for(size_t j = 0; j < inputs->shape[1]; j++){
+                layer.saved_inputs->fastSet2D(i, j, inputs->fastGet2D(i, j));
+                if(inputs->fastGet2D(i, j) > layer.relmin){
+                    layer.outputs->fastSet2D(i, j, layer.relmin);
+                }
+                else{
+                    layer.outputs->fastSet2D(i, j, inputs->fastGet2D(i,j));
+                }
+            }
+        }
+        return layer.outputs;
+    }
+
+
     return nullptr;
 }
 
@@ -366,11 +397,22 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         if (!mem) throw std::bad_alloc{};
         auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
 
-        layer.dinputs = p;
+        layer.dinputs = p;        
 
         for(int i = 0; i < layer.saved_inputs->shape[0]; i++){
-            layer.dinputs->operator[](i) << dvalsXJacobian(layer.outputs->operator[](i), layer.saved_inputs->shape[1], dvalues->operator[](i)); 
+
+            for(int j = 0; j < layer.saved_inputs->shape[1]; j++) {
+                layer.dinputs->fastSet2D(i, j, 0.0f);
+                for(int k = 0; k < layer.saved_inputs->shape[1]; k++) {
+                    if (k == j) {
+                        layer.dinputs->fastInc2D(i, j, (layer.saved_inputs->fastGet2D(i, j) * (1 - layer.saved_inputs->fastGet2D(i, j))) * dvalues->fastGet2D(i, k));
+                    } else {
+                        layer.dinputs->fastInc2D(i, j, (-layer.saved_inputs->fastGet2D(i, j) * layer.saved_inputs->fastGet2D(i, k)) * dvalues->fastGet2D(i, k));  
+                    }
+                }
+            }
         }
+
         return layer.dinputs;
     }
     
@@ -434,7 +476,7 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
 
         for(int i = 0; i < layer.saved_inputs->shape[0]; i++){
             for(int j = 0; j < layer.saved_inputs->shape[1]; j++){
-                layer.dinputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j )*(1-layer.outputs->fastGet2D(i, j))*dvalues->fastGet2D(i, j));
+                layer.dinputs->fastSet2D(i, j, layer.saved_inputs->fastGet2D(i,j )*(1-layer.saved_inputs->fastGet2D(i, j))*dvalues->fastGet2D(i, j));
             }
         }
         return layer.dinputs;
@@ -507,6 +549,27 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         return layer.dinputs;
     }
 
+    if(layer.type == 0xc){
+
+        void* mem = std::malloc(sizeof(Array<NumType,2>));
+        if (!mem) throw std::bad_alloc{};
+        auto* p = new (mem) Array<NumType,2>(layer.saved_inputs->shape); 
+
+        layer.dinputs = p;
+
+
+        for(size_t i = 0; i < layer.saved_inputs->shape[0]; i++){
+            for(size_t j = 0; j < layer.saved_inputs->shape[1]; j++){
+                if(layer.saved_inputs->fastGet2D(i, j) >= layer.relmin){
+                    layer.dinputs->fastSet2D(i, j, 0);
+                }
+                else{
+                    layer.dinputs->fastSet2D(i, j, dvalues->fastGet2D(i,j));
+                }
+            }
+        }
+        return layer.dinputs;
+    }
 
     return nullptr;
 }
@@ -515,6 +578,7 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
 // Clears Logits
 template <typename NumType>
 void freeActivationLogits(ActivationLayer<NumType>& layer){
+    // Force to be false in Python
     if(layer.outputOwnership){
         delete layer.outputs;
     }
@@ -526,6 +590,7 @@ void freeActivationLogits(ActivationLayer<NumType>& layer){
 // Update Tuneable Params
 template <typename NumType>
 void updateParams(ActivationLayer<NumType>& layer){
+    
 }
 
 

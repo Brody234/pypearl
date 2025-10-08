@@ -21,6 +21,7 @@ struct ActivationLayer {
      * 0x9: Array of Parameter Alpha's PReLU
      * 0xa: Slope Linear
      * 0xb: y=mx+b Linear
+     * 0xc: Reverse ReLU
      */
     uint8_t type;
     Array<NumType,2>* saved_inputs;

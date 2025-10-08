@@ -167,6 +167,14 @@ PyInit__pypearl(void)
     Py_INCREF(&PySoftmax64Type);
     PyModule_AddObject(m, "Softmax64", (PyObject*)&PySoftmax64Type);
 
+    if (PyType_Ready(&PyReverseReLU64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyReverseReLU64Type);
+    PyModule_AddObject(m, "ReverseReLU64", (PyObject*)&PyReverseReLU64Type);
+
+
     return m; 
 }  
   

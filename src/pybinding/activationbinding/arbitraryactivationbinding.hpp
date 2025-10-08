@@ -21,6 +21,7 @@ static int PySigmoid64_init(PyAL64 *self, PyObject *args, PyObject *kwds);
 static int PyStep64_init(PyAL64 *self, PyObject *args, PyObject *kwds);
 static int PyLeakyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds);
 static int PySoftmax64_init(PyAL64 *self, PyObject *args, PyObject *kwds);
+static int PyReverseReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds);
 
 static PyObject* PyAL64_forward(PyAL64 *self, PyObject *arg);
 static PyObject * PyAL64_backward(PyAL64 *self, PyObject *arg);
@@ -35,6 +36,6 @@ extern PyTypeObject PySigmoid64Type;
 extern PyTypeObject PyLeakyReLU64Type;
 extern PyTypeObject PySoftmax64Type;
 extern PyTypeObject PyStep64Type;
-
+extern PyTypeObject PyReverseReLU64Type;
 
 #include "arbitraryactivationbinding.cpp"
