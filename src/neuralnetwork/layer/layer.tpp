@@ -202,7 +202,7 @@ Array<NumType, 2> Layer<NumType>::forward(Array<NumType, 2> const& input){
 
                 float64x2_t nextinputs3 = vld1q_f64(curinputdata + j +  4);
                 float64x2_t nextweights3 = vld1q_f64(curweightsTdata + j +  4);
-                accs[2] += vfmaq_f64(accs[2], nextinputs3, nextweights3);
+                accs[2] = vfmaq_f64(accs[2], nextinputs3, nextweights3);
 
                 float64x2_t nextinputs4 = vld1q_f64(curinputdata + j +  6);
                 float64x2_t nextweights4 = vld1q_f64(curweightsTdata + j +  6);

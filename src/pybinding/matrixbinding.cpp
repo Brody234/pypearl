@@ -370,6 +370,197 @@ PyMappingMethods PyArrayD2_as_mapping = {
     /* mp_ass_subscript */ (objobjargproc) PyArrayD2_ass_item,    // x[key] = val
 };
 
+
+static void
+PyArrayI1_dealloc(PyArrayI1Object *self)
+{
+    // 1) delete the C++ array
+    delete self->cpp_obj;
+    // 2) free the Python wrapper
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+static PyObject *
+PyArrayI1_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyArrayD1Object *self = (PyArrayD1Object*)type->tp_alloc(type, 0);
+    if (self) {
+        self->cpp_obj = nullptr;
+    }
+    return (PyObject*)self;
+}
+
+static int
+PyArrayI1_init(PyArrayI1Object *self, PyObject *args, PyObject *kwds)
+{
+    Py_ssize_t size;
+    static char *kwlist[] = { (char*)"size", nullptr };
+    // require one integer argument: size
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n", kwlist, &size))
+        return -1;
+
+    try {
+        // allocate your C++ object
+        self->cpp_obj = new ArrayI1((size_t)size);
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+PyArrayI1_set(PyArrayI1Object *self, PyObject *args){
+
+    Py_ssize_t idx;
+    int newval;
+    if(!PyArg_ParseTuple(args, "ni", &idx, &newval))
+        return NULL;
+    size_t size = self->cpp_obj->len;
+    if (!self->cpp_obj) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "ArrayI1 object not initialized");
+        return NULL;
+    }
+
+    if(idx < 0 || (size_t)idx >= size){
+        PyErr_SetString(PyExc_IndexError, "index out of bounds");
+        return NULL;
+    }
+    (*(self->cpp_obj))[(size_t)idx] = newval;
+    Py_RETURN_NONE;
+}
+static Py_ssize_t
+PyArrayI1_length(PyArrayI1Object *self, PyObject *args)
+{
+    // assuming your C++ object has a .len member
+    return (Py_ssize_t) self->cpp_obj->len;
+}
+static PyObject *
+PyArrayI1_str(PyArrayI1Object *self)
+{
+    try {
+        const std::string &s = self->cpp_obj->toString();
+        return PyUnicode_FromString(s.c_str());   /* new ref */
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
+
+static PyObject *
+PyArrayI1_get(PyArrayI1Object *self, PyObject *args)
+{
+    Py_ssize_t idx;
+    // parse one integer argument
+    if (!PyArg_ParseTuple(args, "n", &idx))
+        return NULL;
+
+    // bounds‐check
+    size_t size = self->cpp_obj->len;  
+    if (idx < 0 || (size_t)idx >= size) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
+
+    // fetch from your C++ array
+    double value = (*(self->cpp_obj))[(size_t)idx];
+    return PyFloat_FromDouble(value);
+}
+
+static PyObject *
+PyArrayI1_item(PyObject *self, Py_ssize_t idx)
+{
+    // Build a one-element tuple (idx,) so we can call your existing get
+    PyObject *args = Py_BuildValue("(n)", idx);
+    if (!args) return NULL;
+
+    PyObject *result = PyArrayI1_get((PyArrayI1Object*)self, args);
+    Py_DECREF(args);
+    return result;
+}
+
+// adapter for __setitem__
+static int
+PyArrayI1_ass_item(PyObject *self, Py_ssize_t idx, PyObject *value)
+{
+    // Build a two-element tuple (idx, value) for your existing set
+    PyObject *args = Py_BuildValue("(nO)", idx, value);
+    if (!args) return -1;
+
+    PyObject *res = PyArrayI1_set((PyArrayI1Object*)self, args);
+    Py_DECREF(args);
+    if (!res) return -1;
+    Py_DECREF(res);
+    return 0;
+}
+
+PyMethodDef PyArrayI1_methods[] = {
+    {"get", (PyCFunction)PyArrayI1_get, METH_VARARGS,
+     "get(index) -> int\n\n"
+     "Return the element at position `index` (0-based)."},
+     {"set", (PyCFunction)PyArrayI1_set, METH_VARARGS, "set(index)->int\n\n"
+     "Change the element at position index"},
+    {NULL, NULL, 0, NULL}
+};
+
+PyGetSetDef PyArrayI1_getset[] = {
+    {NULL, NULL, NULL, NULL, NULL}
+}; 
+
+PyTypeObject PyArrayI1Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "pypearl.ArrayI1",               // tp_name
+    sizeof(PyArrayI1Object),         // tp_basicsize
+    0,                               // tp_itemsize
+    (destructor)PyArrayI1_dealloc,   // tp_dealloc
+    0,                               // tp_vectorcall_offset  (or tp_print in very old CPython)
+    0,                               // tp_getattr
+    0,                               // tp_setattr
+    0,                               // tp_reserved / tp_compare
+    (reprfunc)PyArrayI1_str,         // tp_repr
+    0,                               // tp_as_number
+    0,                               // tp_as_sequence
+    0,                               // tp_as_mapping
+    0,                               // tp_hash
+    0,                               // tp_call
+    (reprfunc)PyArrayI1_str,         // tp_str
+    0,                               // tp_getattro
+    0,                               // tp_setattro
+    0,                               // tp_as_buffer
+    Py_TPFLAGS_DEFAULT,              // tp_flags
+    "1-D int array",              // tp_doc
+    0,                               // tp_traverse
+    0,                               // tp_clear
+    0,                               // tp_richcompare
+    0,                               // tp_weaklistoffset
+    0,                               // tp_iter
+    0,                               // tp_iternext
+    PyArrayI1_methods,               // tp_methods
+    0,                               // tp_members
+    PyArrayI1_getset,                // tp_getset
+    0,                               // tp_base
+    0,                               // tp_dict
+    0,                               // tp_descr_get
+    0,                               // tp_descr_set
+    0,                               // tp_dictoffset
+    (initproc)PyArrayI1_init,        // tp_init
+    0,                               // tp_alloc
+    PyArrayI1_new                    // tp_new
+};
+
+
+PySequenceMethods PyArrayI1_as_sequence = {
+    /* sq_length    */ (lenfunc)         PyArrayI1_length,
+    /* sq_concat    */ 0,
+    /* sq_repeat    */ 0,
+    /* sq_item      */ (ssizeargfunc)    PyArrayI1_item,      // <— adapter
+    /* sq_slice     */ 0,
+    /* sq_ass_item  */ (ssizeobjargproc) PyArrayI1_ass_item,  // <— adapter
+    /* …rest zero… */
+};
+
+
 static void
 PyArrayI2_dealloc(PyArrayI2Object *self)
 {

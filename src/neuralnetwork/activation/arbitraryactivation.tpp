@@ -69,8 +69,6 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
     // Softmax
     if(layer.type == 0x2){
             
-            //saved_samples = inputs.shape[0];
-            //saved_prev_layer = inputs.shape[1];
             if(inputs->shape[0] <= 0){
                 return nullptr;
             }            
@@ -84,12 +82,6 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
             auto* pout = new (memout) Array<NumType,2>(inputs->shape); 
             layer.outputs = pout;
 
-            /*if(this->outputs != nullptr){
-                clearMatrix(this->outputs, samples);
-                this->outputs = nullptr;
-            }*/
-            //size_t outputsShape[2] = {saved_samples, saved_prev_layer};
-            //Array<NumType, 2> outputs = Array<NumType, 2>(inputs.shape);
             for(int i = 0; i < inputs->shape[0]; i++){
                 NumType sum = 0.0f;
                 NumType max = inputs->fastGet2D(i, 0);
@@ -104,7 +96,7 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
                 }
                 for(int j = 0; j < inputs->shape[1]; j++){
                     
-                    layer.outputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j)/(sum+1e-7));
+                    layer.outputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j)/(sum));
                     layer.saved_inputs->fastSet2D(i, j, layer.outputs->fastGet2D(i,j));
                 }
             }
@@ -310,6 +302,7 @@ Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<
         return layer.outputs;
     }
 
+    // Reverse ReLU
     if(layer.type == 0xc){
         void* mem = std::malloc(sizeof(Array<NumType,2>));
         if (!mem) throw std::bad_alloc{};
@@ -549,6 +542,7 @@ Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLaye
         return layer.dinputs;
     }
 
+    // Reverse ReLU
     if(layer.type == 0xc){
 
         void* mem = std::malloc(sizeof(Array<NumType,2>));

@@ -126,7 +126,7 @@ static int PySigmoid64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
 static int PyLeakyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"minimum", "alpha", NULL};  
-    double minimum = 1.0;
+    double minimum = 0.0;
     double alpha = 0.0;
     
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|dd", kwlist, &minimum, &alpha)) {

@@ -330,6 +330,23 @@ class Array<ArrType, 1> {
          */
         ArrType min();
 
+        /*
+         * A quicker but unstable internal use method for getting data.
+         */
+        ArrType fastGet1D(std::size_t i) const;
+
+        /*
+         * A quicker way to change a value. Very unstable.
+         */
+        void fastSet1D(std::size_t i, ArrType val);
+
+        /*
+         * A quicker way to incrememnt a value. Very unstable.
+         */
+        void fastInc1D(std::size_t i, ArrType val);
+
+
+
 
 
 };

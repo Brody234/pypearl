@@ -7,6 +7,9 @@ pypearl/__pycache__/
 *.dll
 *.dylib
 
+compile_commands.json
+src/neuralnetwork/testcode.o
+
 # Distribution / packaging
 build/
 dist/

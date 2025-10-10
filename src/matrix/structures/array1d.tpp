@@ -206,6 +206,22 @@ Array<ArrType, 1>& Array<ArrType, 1>::operator=(const Array<ArrType, 1>& vector)
 }
 
 template <typename ArrType>
+ArrType Array<ArrType, 1>::fastGet1D( std::size_t i) const{
+    return data[i*stride];
+}
+
+template <typename ArrType>
+void Array<ArrType, 1>::fastSet1D(std::size_t i, ArrType val){
+    data[i*stride] = val;
+}
+
+template <typename ArrType>
+void Array<ArrType, 1>::fastInc1D(std::size_t i, ArrType val){
+    data[i*stride] += val;
+}
+
+
+template <typename ArrType>
 ArrType Array<ArrType, 1>::max(){
     ArrType max = (*this)[0];
     for(size_t i = 1; i < len; i++){

@@ -8,6 +8,7 @@
 #include "./lossbinding/ccebinding.hpp"
 #include "./optimizerbinding/sgdbinding.hpp"
 #include "./modelbinding/modelbinding.hpp"
+#include "./lossbinding/arbitrarylossbinding.hpp"
 
 PyObject *add(PyObject *self, PyObject *args){
     int x;
@@ -59,6 +60,16 @@ PyInit__pypearl(void)
     Py_INCREF(&PyArrayD2Type);
     PyModule_AddObject(m, "ArrayD2", (PyObject*)&PyArrayD2Type);
 
+    PyArrayI1Type.tp_as_sequence = &PyArrayI1_as_sequence;
+
+
+    // --- register ArrayD1 ---
+    if (PyType_Ready(&PyArrayI1Type) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    Py_INCREF(&PyArrayI1Type);
+    PyModule_AddObject(m, "ArrayI1", (PyObject*)&PyArrayI1Type);
 
     PyArrayI2Type.tp_as_mapping = &PyArrayI2_as_mapping;
     if (PyType_Ready(&PyArrayI2Type) < 0) {
@@ -174,6 +185,12 @@ PyInit__pypearl(void)
     Py_INCREF(&PyReverseReLU64Type);
     PyModule_AddObject(m, "ReverseReLU64", (PyObject*)&PyReverseReLU64Type);
 
+    if (PyType_Ready(&PyCCE64Type) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&PyCCE64Type);
+    PyModule_AddObject(m, "CCE64", (PyObject*)&PyCCE64Type);
 
     return m; 
 }  

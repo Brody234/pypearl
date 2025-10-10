@@ -87,6 +87,14 @@ static Py_ssize_t PyArrayD2_length(PyArrayD2Object *self, PyObject *args);
 static int PyArrayD2_ass_item(PyObject *self, PyObject *args, PyObject *value);
 static PyObject* PyArrayD2_item(PyObject *self, PyObject *args);
 
+static void PyArrayI1_dealloc(PyArrayI1Object *self);
+static PyObject* PyArrayI1_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static int PyArrayI1_init(PyArrayI1Object *self, PyObject *args, PyObject *kwds);
+static Py_ssize_t PyArrayI1_length(PyArrayI1Object *self, PyObject *args);
+static int PyArrayI1_ass_item(PyObject *self, PyObject *args, PyObject *value);
+static PyObject* PyArrayI1_item(PyObject *self, PyObject *args);
+
+
 static void PyArrayI2_dealloc(PyArrayI2Object *self);
 static PyObject* PyArrayI2_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int PyArrayI2_init(PyArrayI2Object *self, PyObject *args, PyObject *kwds);
@@ -104,6 +112,12 @@ extern PyMethodDef PyArrayD2_methods[];
 extern PyGetSetDef PyArrayD2_getset[];
 extern PyTypeObject PyArrayD2Type;
 extern PyMappingMethods PyArrayD2_as_mapping;
+
+extern PyMethodDef PyArrayI1_methods[];
+extern PyGetSetDef PyArrayI1_getset[];
+extern PyTypeObject PyArrayI1Type;
+extern PySequenceMethods PyArrayI1_as_sequence;
+
 
 extern PyMethodDef PyArrayI2_methods[];
 extern PyGetSetDef PyArrayI2_getset[];

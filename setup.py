@@ -108,7 +108,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.6.3rm -rf build/ dist/ *.egg-info",
+    version="0.6.4",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="An efficient Machine Learning Library",
