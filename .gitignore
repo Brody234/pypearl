@@ -37,6 +37,7 @@ Thumbs.db
 
 #Matrix Stuff
 src/matrix/testcode.cpp
+src/matrix/structures/ndarray_test
 src/matrix/testcode
 src/matrix/testcode.dSYM
 src/matrix/Makefile
