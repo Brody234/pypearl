@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <Python.h> 
+#include <unicodeobject.h> 
 
 /*
  * Editors Notes

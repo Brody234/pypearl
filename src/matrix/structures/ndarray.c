@@ -3,6 +3,7 @@
 
 #include "./ndarray.h"
 
+
 inline void fastGet1D4(ndarray* arr, size_t pos, void* loc){
     memcpy(loc, arr->data+pos, 4);
 }
@@ -124,6 +125,12 @@ void zero4(void* elem, const size_t* idx, size_t nd){
     *(int32_t*)elem = 0x0;
 }
 
+void zero8(void* elem, const size_t* idx, size_t nd){
+    (void)nd;
+    (void)idx;
+    *(int64_t*)elem = 0x0;
+}
+
 void ndForeach(ndarray* arr, func visit){
     char* cur_elem = arr->data;
 
@@ -164,11 +171,175 @@ ndarray_dealloc(ndarray *self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+inline PyObject* arrayElementToPyUnicode(ndarray* arr, size_t* idx){
+    size_t pos = 0;
+    for(size_t i = 0; i < arr->nd; i++){
+        pos += arr->strides[i]*idx[i];
+    }
+    if(arr->dtype == 0x0){
+        float f;
+        memcpy(&f, arr->data + pos, sizeof f);
+        PyObject *pyf = PyFloat_FromDouble((double)f);
+        if (!pyf) return NULL;
+        PyObject *s = PyObject_Str(pyf);
+        Py_DECREF(pyf);
+
+        return s;
+    }
+    if(arr->dtype == 0x1){
+        double f;
+        memcpy(&f, arr->data + pos, sizeof f);
+        PyObject *pyf = PyFloat_FromDouble((double)f);
+        if (!pyf) return NULL;
+        PyObject *s = PyObject_Str(pyf);
+        Py_DECREF(pyf);
+
+        return s;
+    }
+    if(arr->dtype == 0x2){
+        int32_t f;
+        memcpy(&f, arr->data + pos, sizeof f);
+        PyObject *pyf = PyLong_FromLong((long)f);
+        if (!pyf) return NULL;
+        PyObject *s = PyObject_Str(pyf);
+        Py_DECREF(pyf);
+
+        return s;
+    }
+    if(arr->dtype == 0x3){
+        int64_t f;
+        memcpy(&f, arr->data + pos, sizeof f);
+        PyObject *pyf = PyLong_FromLongLong((long long)f);
+        if (!pyf) return NULL;
+        PyObject *s = PyObject_Str(pyf);
+        Py_DECREF(pyf);
+
+        return s;
+    }
+
+    return NULL;
+
+}
+
+// not super efficient because the syscalls and python are way so slower and it's only bound by nd bc print per sub array is capped at 6
+static void recursiveprint(ndarray *arr, size_t* idx, size_t dim, _PyUnicodeWriter *w){
+    
+    _PyUnicodeWriter_WriteASCIIString(w, "[", 1);
+    if(dim == arr->nd-1){
+        _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+
+        if(arr->dims[dim]<=6){
+            for(size_t i = 0; i < arr->dims[dim]; i++){
+                idx[dim] = i;
+                PyObject *num = arrayElementToPyUnicode(arr, idx);
+                _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+                _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+            }
+        }
+        else{
+            idx[dim] = 0;
+            PyObject *num = arrayElementToPyUnicode(arr, idx);
+            _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+            _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+
+            idx[dim] = 1;
+            num = arrayElementToPyUnicode(arr, idx);
+            _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+            _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+
+            idx[dim] = 2;
+            num = arrayElementToPyUnicode(arr, idx);
+            _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+            _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+
+            _PyUnicodeWriter_WriteASCIIString(w, "...", 3);
+
+            idx[dim] = arr->dims[dim]-3;
+            num = arrayElementToPyUnicode(arr, idx);
+            _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+            _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+
+            idx[dim] -= 1;
+            num = arrayElementToPyUnicode(arr, idx);
+            _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+            _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+
+            idx[dim] -= 1;
+            num = arrayElementToPyUnicode(arr, idx);
+            _PyUnicodeWriter_WriteStr(w, num); Py_DECREF(num);
+            _PyUnicodeWriter_WriteASCIIString(w, " ", 1);
+        }
+    }
+    else{
+        if(arr->dims[dim]<=6){
+            idx[dim] = 0;
+
+            for(size_t i = 0; i < arr->dims[dim]; i++){
+                recursiveprint(arr, idx, dim+1, w);
+                idx[dim]+=1;
+            }
+        }
+        else{
+            idx[dim]=0;
+
+            recursiveprint(arr, idx, dim+1, w);
+            idx[dim]+=1;
+            recursiveprint(arr, idx, dim+1, w);
+            idx[dim]+=1;
+            recursiveprint(arr, idx, dim+1, w);
+
+            _PyUnicodeWriter_WriteASCIIString(w, "\n...\n", 5);
+
+            idx[dim]=arr->dims[dim]-3;
+            recursiveprint(arr, idx, dim+1, w);
+            idx[dim]+=1;
+            recursiveprint(arr, idx, dim+1, w);
+            idx[dim]+=1;
+            recursiveprint(arr, idx, dim+1, w);
+        }
+
+    }
+    _PyUnicodeWriter_WriteASCIIString(w, "]", 1);
+    if(dim != 0 && idx[dim-1] != arr->dims[dim-1]-1){
+        _PyUnicodeWriter_WriteASCIIString(w, "\n", 1);
+        if(dim != arr->nd-1){
+            _PyUnicodeWriter_WriteASCIIString(w, "\n", 1);
+        }
+    }
+
+}
+
 static PyObject *
 ndarray_str(ndarray *self)
 {
-    
-    return PyUnicode_FromString("If I didn't implement nd array toString() you can email me brodymassad@gmail.com. Sorry for inconvenience.");
+    size_t* idx;
+    idx = (size_t*)malloc(self->nd*sizeof(size_t));
+    for(size_t i = 0; i < self->nd; i++){
+        idx[i] = 0;
+    }
+    _PyUnicodeWriter w; 
+    _PyUnicodeWriter_Init(&w);
+    w.min_length = 128;
+
+    recursiveprint(self, idx, 0, &w);
+    _PyUnicodeWriter_WriteASCIIString(&w, ", shape(", 9);
+    for(size_t i = 0; i < self->nd; i++){
+        int64_t f;
+        memcpy(&f, self->dims, sizeof f);
+        PyObject *pyf = PyLong_FromLongLong((long long)f);
+        if (!pyf) return NULL;
+        PyObject *s = PyObject_Str(pyf);
+        Py_DECREF(pyf);
+        _PyUnicodeWriter_WriteStr(&w, s);
+        Py_DECREF(s);
+        if(i < self->nd-1){
+            _PyUnicodeWriter_WriteASCIIString(&w, ", ", 2);
+        }
+        else{
+            _PyUnicodeWriter_WriteASCIIString(&w, ")", 1);
+        }
+    }
+    return _PyUnicodeWriter_Finish(&w);
 }
 
 
@@ -197,12 +368,18 @@ ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
     
     PyObject *shape_obj = NULL;
     // 1 means zero everything, 0 means leave normal
-    int zeros = 0;
+    PyObject* PyZeros = Py_True;
     const char *dtypeStr = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Opz", kwlist, &shape_obj, &zeros, &dtypeStr))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOz", kwlist, &shape_obj, &PyZeros, &dtypeStr))
         return -1;
 
+    if (!PyBool_Check(PyZeros)) {
+        PyErr_SetString(PyExc_TypeError, "'zeros' must be a bool");
+        return -1;
+    }
+
+    int zeros = (PyZeros == Py_True);
     size_t nd;
     size_t* dims;
     size_t* strides;
@@ -282,6 +459,12 @@ ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
         self->dtype = dtype;
         self->refs = refs;
 
+        if(zeros && (dtype == 0x1 || dtype == 0x3)){
+            ndForeach(self, zero8);
+        }
+        if(zeros && (dtype == 0x0 || dtype == 0x2)){
+            ndForeach(self, zero4);
+        }
     }
     if(!shape_obj){
         return -1;
