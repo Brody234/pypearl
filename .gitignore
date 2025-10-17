@@ -6,7 +6,8 @@ pypearl/__pycache__/
 *.pyd
 *.dll
 *.dylib
-
+*.dSYM
+*.o
 compile_commands.json
 src/neuralnetwork/testcode.o
 

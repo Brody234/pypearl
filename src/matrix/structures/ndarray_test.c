@@ -8,7 +8,7 @@ int main(){
     size_t idx[] = {1, 0};
     int32_t newval = 0x13;
     int32_t curval = 0x2;
-    ndarray arr = arrayInit(2, 0x0, dims);
+    ndarray arr = arrayCInit(2, 0x0, dims);
     ndPrint(&arr);
     arrayGetElement(arr, &curval, idx);
     printf("%d\n", curval);

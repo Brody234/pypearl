@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "../matrix/structures/ndarray.h"
 #include "../matrix/matrix.hpp"
 #include "matrixbinding.hpp"
 #include "layerbinding.hpp"
@@ -9,6 +10,7 @@
 #include "./optimizerbinding/sgdbinding.hpp"
 #include "./modelbinding/modelbinding.hpp"
 #include "./lossbinding/arbitrarylossbinding.hpp"
+
 
 PyObject *add(PyObject *self, PyObject *args){
     int x;
@@ -39,8 +41,17 @@ PyInit__pypearl(void)
 {
     PyObject *m = PyModule_Create(&pypearl);
     if (!m) return NULL;
-    PyArrayD1Type.tp_as_sequence = &PyArrayD1_as_sequence;
 
+    // --- register ndarray ---
+    if (PyType_Ready(&ndarrayType) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
+    Py_INCREF(&ndarrayType);
+    PyModule_AddObject(m, "ndarray", (PyObject*)&ndarrayType);
+ 
+
+    PyArrayD1Type.tp_as_sequence = &PyArrayD1_as_sequence;
 
     // --- register ArrayD1 ---
     if (PyType_Ready(&PyArrayD1Type) < 0) {

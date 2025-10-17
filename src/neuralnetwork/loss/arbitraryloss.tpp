@@ -25,6 +25,7 @@ NumType lossForward(Array<NumType, 2>* inputs, LossStruct<NumType>& loss, void* 
 
         return sum/(inputs->shape[0]);
     }
+
 }
 
 template <typename NumType>
