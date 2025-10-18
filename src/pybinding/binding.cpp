@@ -1,6 +1,6 @@
 #include <Python.h>
-#include "../matrix/structures/ndarray.h"
-#include "../matrix/matrix.hpp"
+#include "matrix/structures/ndarray.hpp"
+#include "matrix/matrix.hpp"
 #include "matrixbinding.hpp"
 #include "layerbinding.hpp"
 #include "./activationbinding/relubinding.hpp"

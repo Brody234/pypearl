@@ -1,7 +1,11 @@
 #ifndef NDARRAY_C
 #define NDARRAY_C
 
-#include "./ndarray.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "ndarray.hpp"
 
 
 inline void fastGet1D4(ndarray* arr, size_t pos, void* loc){
@@ -322,10 +326,10 @@ ndarray_str(ndarray *self)
     w.min_length = 128;
 
     recursiveprint(self, idx, 0, &w);
-    _PyUnicodeWriter_WriteASCIIString(&w, ", shape(", 9);
+    _PyUnicodeWriter_WriteASCIIString(&w, ", shape(", 8);
     for(size_t i = 0; i < self->nd; i++){
         int64_t f;
-        memcpy(&f, self->dims, sizeof f);
+        memcpy(&f, self->dims + i, sizeof f);
         PyObject *pyf = PyLong_FromLongLong((long long)f);
         if (!pyf) return NULL;
         PyObject *s = PyObject_Str(pyf);
@@ -788,6 +792,9 @@ ndarray arrayCInit(size_t nd, u_int8_t dtype, size_t* shape){
     obj->dtype = dtype;
     return (*obj);
 }
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

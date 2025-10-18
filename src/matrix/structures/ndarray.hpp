@@ -1,6 +1,10 @@
 #ifndef NDARRAY
 #define NDARRAY
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -69,5 +73,9 @@ inline void fastIncInt32(ndarray arr, size_t i, size_t j, int32_t val);
 inline void fastIncInt64(ndarray arr, size_t i, size_t j, void* out);
 void printElemI32(void* elem, const size_t* idx, size_t nd);
 
-#include "ndarray.c"
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
