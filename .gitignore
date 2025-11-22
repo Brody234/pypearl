@@ -59,6 +59,8 @@ src/neuralnetwork/oldtests.txt
 src/neuralnetwork/wrongcce.txt
 *.aimodel
 *.model
+src/neuralnetwork/layer/layer copy.hpp
+src/neuralnetwork/layer/layer copy.tpp
 
 #Decision Tree Stuff
 src/decisiontree/testcode.cpp

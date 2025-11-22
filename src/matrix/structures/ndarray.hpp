@@ -62,16 +62,31 @@ extern PyGetSetDef ndarray_getset[];
 extern PyTypeObject ndarrayType;
 
 // C Functions
-ndarray arrayCInit(size_t nd, u_int8_t dtype, size_t* dims);
+ndarray* arrayCInit(size_t nd, u_int8_t dtype, size_t* dims);
+ndarray* arrayScalarCInit(void* value, u_int8_t dtype);
+void ndincref(ndarray* self);
+void nddecref(ndarray* self);
 int arrayGetElement(ndarray arr, void* out, size_t* idx);
 int arraySetElement(ndarray arr, void* in, size_t* idx);
-inline void fastGet2D4(ndarray arr, size_t i, size_t j, void* out);
-inline void fastGet2D8(ndarray arr, size_t i, size_t j, void* out);
-inline void fastSet2D4(ndarray arr, size_t i, size_t j, void* in);
-inline void fastSet2D8(ndarray arr, size_t i, size_t j, void* in);
-inline void fastIncInt32(ndarray arr, size_t i, size_t j, int32_t val);
-inline void fastIncInt64(ndarray arr, size_t i, size_t j, void* out);
+
+void fastGet1D4Index(ndarray* arr, size_t pos, void* loc);
+void fastGet1D8Index(ndarray* arr, size_t pos, void* loc);
+void fastGet1DXIndex(ndarray* arr, size_t pos, void* loc, size_t byte_count);
+void fastSet1D4Index(ndarray* arr, size_t pos, void* val);
+void fastSet1D8Index(ndarray* arr, size_t pos, void* val);
+void fastSet1DXIndex(ndarray* arr, size_t pos, void* val, size_t byte_count);
+
+void fastGet2D4(ndarray* arr, size_t i, size_t j, void* out);
+void fastGet2D8(ndarray* arr, size_t i, size_t j, void* out);
+void fastSet2D4(ndarray* arr, size_t i, size_t j, void* in);
+void fastSet2D8(ndarray* arr, size_t i, size_t j, void* in);
+void fastScalar4(ndarray* arr, void* out);
+void fastScalar8(ndarray* arr, void* out);
+void fastIncInt32(ndarray arr, size_t i, size_t j, int32_t val);
+void fastIncInt64(ndarray arr, size_t i, size_t j, void* out);
 void printElemI32(void* elem, const size_t* idx, size_t nd);
+void fastMove2D4(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
+void fastMove2D8(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
 
 
 #ifdef __cplusplus

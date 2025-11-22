@@ -3,31 +3,26 @@
 
 #include "arbitraryactivationbinding.hpp"
 
-static void PyAL64_dealloc(PyAL64 *self)
+static void PyAL_dealloc(PyAL *self)
 {
-    delete self->data->saved_inputs;
-
-    delete self->data->dinputs;
-
-    delete self->data->outputs;
 
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-static PyObject* PyAL64_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject* PyAL_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyAL64 *self = (PyAL64*)type->tp_alloc(type, 0);
+    PyAL *self = (PyAL*)type->tp_alloc(type, 0);
     if (self) {
         self->data = nullptr;
     }
     return (PyObject*)self;
 }
 
-static int PyAL64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PyAL_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t prev, cur;
     try {
-        self->data = new ActivationLayer<double>{0x0, nullptr, nullptr, 0.0f, nullptr, false, 0.0f, 0.0f};
+        //self->data = new ActivationLayer{0x0, nullptr, nullptr, 0.0f, nullptr, false, 0.0f, 0.0f};
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
@@ -35,23 +30,24 @@ static int PyAL64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PyReLU_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"minimum", NULL};  
-    double alpha = 0.0;  
+    double minimum = 0.0;  
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|d", kwlist, &alpha)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|d", kwlist, &minimum)) {
         return -1;  
     }
 
     Py_ssize_t prev, cur;
     try {
         // Obscure the hardcoded 0.0 branch micro optimization behind something no one ever has to see in Python because no Python programmer will ever use this on their own
-        if(alpha == 0.0){
-            self->data = new ActivationLayer<double>{0x1, nullptr, nullptr, 0.0f, nullptr, false, 0.0f, 0.0f};
+        if(minimum == 0.0){
+            self->data = new ActivationLayer{0x1, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr};
         }
         else{
-            self->data = new ActivationLayer<double>{0x0, nullptr, nullptr, alpha, nullptr, false, 0.0f, 0.0f};
+            ndarray* minval = arrayScalarCInit(&minimum, 0x1);
+            self->data = new ActivationLayer{0x0, nullptr, nullptr, minval, nullptr, false, nullptr, nullptr};
         }
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -60,7 +56,7 @@ static int PyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PyLinear64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PyLinear_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"m", "b", "flow", NULL};  
     double m = 1.0;
@@ -80,21 +76,27 @@ static int PyLinear64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
             if(m == 1.0){
                 if(flow==true){
                     // Optimized Linear with no logits (literally just a foward and backward return the EXACT ADDRESS that was inputted)
-                    self->data = new ActivationLayer<double>{0x5, nullptr, nullptr, 0.0f, nullptr, false, 1.0f, 0.0f};
+                    self->data = new ActivationLayer{0x5, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr};
                 }
                 else{
+
                     // Copies a saved inputs, copies an outputs copies a dvalues -> dinputs. Literally the worst and most evil function ever. Do nothing in O(n^2) time. The fact I am supporting this for someone who might want it should warrant a nobel peace prize if this library ever gets more than 5 users.
-                    self->data = new ActivationLayer<double>{0x4, nullptr, nullptr, 0.0f, nullptr, false, 1.0f, 0.0f};
+                    self->data = new ActivationLayer{0x4, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr};
                 }
             }
             else{
                 // Linear with a slope. Needs some optimization, but your welcome for saving a variable load and add instruction per value.
-                self->data = new ActivationLayer<double>{0xa, nullptr, nullptr, 0.0f, nullptr, false, m, 0.0f};
+                ndarray* slope = arrayScalarCInit(&m, 0x1);
+
+                self->data = new ActivationLayer{0xa, nullptr, nullptr, nullptr, nullptr, false, slope, nullptr};
             }
         }
         else{
             // Linear with a slope and an offset. Backpass for 0xa and 0xb are the same branch
-            self->data = new ActivationLayer<double>{0xb, nullptr, nullptr, 0.0f, nullptr, false, m, b};
+            ndarray* slope = arrayScalarCInit(&m, 0x1);
+            ndarray* intercept = arrayScalarCInit(&b, 0x1);
+
+            self->data = new ActivationLayer{0xb, nullptr, nullptr, nullptr, nullptr, false, slope, intercept};
         }
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -103,7 +105,7 @@ static int PyLinear64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PySigmoid64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PySigmoid_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {NULL};  
 
@@ -113,8 +115,8 @@ static int PySigmoid64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
 
     Py_ssize_t prev, cur;
     try {
-        // Why is this simpler than linear
-        self->data = new ActivationLayer<double>{0x6, nullptr, nullptr, 0.0f, nullptr, false, 0.0f, 0.0f};
+        // Why is this simpler than linear well bc no args but still
+        self->data = new ActivationLayer{0x6, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr};
 
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -123,7 +125,7 @@ static int PySigmoid64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PyLeakyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PyLeakyReLU_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"minimum", "alpha", NULL};  
     double minimum = 0.0;
@@ -139,16 +141,21 @@ static int PyLeakyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
         if(alpha == 0.0){
             if(minimum == 0.0){
                 // Put in a 0 ReLU
-                self->data = new ActivationLayer<double>{0x1, nullptr, nullptr, 0.0f, nullptr, false, 0.0f, 0.0f};
+                self->data = new ActivationLayer{0x1, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr};
             }
             else{
+                ndarray* minval = arrayScalarCInit(&minimum, 0x1);
+
                 // Put in an arbitrary minimum ReLU
-                self->data = new ActivationLayer<double>{0x0, nullptr, nullptr, minimum, nullptr, false, 0.0f, 0.0f};
+                self->data = new ActivationLayer{0x0, nullptr, nullptr, minval, nullptr, false, nullptr, nullptr};
             }
         }
         else{
+            ndarray* minval = arrayScalarCInit(&minimum, 0x1);
+            ndarray* alphaval = arrayScalarCInit(&alpha, 0x1);
+
             // Actual Leaky ReLU
-            self->data = new ActivationLayer<double>{0x3, nullptr, nullptr, minimum, nullptr, false, alpha, 0.0f};
+            self->data = new ActivationLayer{0x3, nullptr, nullptr, minval, nullptr, false, alphaval, nullptr};
         }
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -157,7 +164,7 @@ static int PyLeakyReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PyStep64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PyStep_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"minimum", "maximum", "flip", NULL};  
     double minimum = 1.0f;
@@ -171,7 +178,11 @@ static int PyStep64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     Py_ssize_t prev, cur;
 
     try {
-        self->data = new ActivationLayer<double>{0x7, nullptr, nullptr, flip, nullptr, false, minimum, maximum};
+        ndarray* minval = arrayScalarCInit(&flip, 0x1);
+        ndarray* alphaval = arrayScalarCInit(&maximum, 0x1);
+        ndarray* betaval = arrayScalarCInit(&minimum, 0x1);
+        // Actual Leaky ReLU
+        self->data = new ActivationLayer{0x7, nullptr, nullptr, minval, nullptr, false, alphaval, betaval};
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
@@ -179,7 +190,7 @@ static int PyStep64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PySoftmax64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PySoftmax_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = { NULL};  
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "", kwlist)) {
@@ -189,7 +200,7 @@ static int PySoftmax64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     Py_ssize_t prev, cur;
 
     try {
-        self->data = new ActivationLayer<double>{0x2, nullptr, nullptr, 0.0f, nullptr, false, 0.0f, 0.0f};
+        self->data = new ActivationLayer{0x2, nullptr, nullptr, nullptr, nullptr, false, nullptr, nullptr};
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return -1;
@@ -197,7 +208,7 @@ static int PySoftmax64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static int PyReverseReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
+static int PyReverseReLU_init(PyAL *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"maximum", NULL};  
     double maximum = 0.0;  
@@ -208,8 +219,10 @@ static int PyReverseReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
 
     Py_ssize_t prev, cur;
     try {
+        ndarray* maxval = arrayScalarCInit(&maximum, 0x1);
+
         // If this function becomes popular I'll probably optimize for now it's one path
-        self->data = new ActivationLayer<double>{0xc, nullptr, nullptr, maximum, nullptr, false, 0.0f, 0.0f};
+        self->data = new ActivationLayer{0xc, nullptr, nullptr, maxval, nullptr, false, nullptr, nullptr};
         
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -218,78 +231,73 @@ static int PyReverseReLU64_init(PyAL64 *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyObject* PyAL64_forward(PyAL64 *self, PyObject *arg){
-    PyAL64 *activation = (PyAL64*) self;
+static ndarray* PyAL_forward(PyAL *self, PyObject *arg){
+
+    PyAL *activation = (PyAL*) self;
 
     static char *kwlist[] = { (char*)"x", NULL };
-    if (!PyObject_TypeCheck(arg, &PyArrayD2Type)) {
-        PyErr_SetString(PyExc_TypeError, "forward() expects an ArrayD2");
+    if (!PyObject_TypeCheck(arg, &ndarrayType)) {
+        PyErr_SetString(PyExc_TypeError, "forward() expects an ndarray");
         return NULL;
     }
-    PyArrayD2Object *input_obj = (PyArrayD2Object*)arg;
+    ndarray *input = (ndarray*)arg;
+    try {
+        ndarray *y = activationForward(input, (*activation->data));
+        if(y){
+            return y;
+        }
+        else{
+            PyErr_SetString(PyExc_TypeError, "Never called forward");
+            return NULL;
+        }
+    } catch (const std::exception &e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
 
-    ArrayD2* out_cpp;
+static ndarray * PyAL_backward(PyAL *self, PyObject *arg){
+    PyAL *activation = (PyAL*) self;
+
+    if (!PyObject_TypeCheck(arg, &ndarrayType)) {
+        PyErr_SetString(PyExc_TypeError, "backward() expects an ndarray");
+        return NULL;
+    }
+    ndarray *input = (ndarray*)arg;
 
     try {
-        out_cpp = activationForward(input_obj->cpp_obj, (*activation->data));
+        std::cout << "Calling back" << std::endl;
+        ndarray* y = activationBackward(input, (*activation->data));
+        if(y){
+            return y;
+        }
+        else{
+            PyErr_SetString(PyExc_TypeError, "You must call forward before backward");
+            return NULL;
+        }
     } catch (const std::exception &e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }
 
-    // Allocate a new Python ArrayD2 object
-    PyObject *out_py = PyArrayD2Type.tp_new(&PyArrayD2Type, NULL, NULL);
-
-    if (!out_py) return NULL;
-    // Steal the C++ result into its cpp_obj
-    ((PyArrayD2Object*)out_py)->cpp_obj = new ArrayD2(std::move((*out_cpp)));
-
-    return out_py;
 }
 
-static PyObject * PyAL64_backward(PyAL64 *self, PyObject *arg){
-    PyAL64 *activation = (PyAL64*) self;
-
-    if (!PyObject_TypeCheck(arg, &PyArrayD2Type)) {
-        PyErr_SetString(PyExc_TypeError, "forward() expects an ArrayD2");
-        return NULL;
-    }
-    PyArrayD2Object *input_obj = (PyArrayD2Object*)arg;
-
-    ArrayD2* out_cpp;
-    try {
-        out_cpp = activationBackward(input_obj->cpp_obj, (*activation->data));
-    } catch (const std::exception &e) {
-        PyErr_SetString(PyExc_RuntimeError, e.what());
-        return NULL;
-    }
-
-    // Allocate a new Python ArrayD2 object
-    PyObject *out_py = PyArrayD2Type.tp_new(&PyArrayD2Type, NULL, NULL);
-    if (!out_py) return NULL;
-
-    // Steal the C++ result into its cpp_obj
-    ((PyArrayD2Object*)out_py)->cpp_obj = new ArrayD2(std::move((*out_cpp)));
-
-    return out_py;
-}
-
-PyMethodDef PyAL64_methods[]{
-    {"forward", (PyCFunction)PyAL64_forward, METH_O, "forward(x)->y"},
-    {"backward", (PyCFunction)PyAL64_backward, METH_O, "backward(x)->y"},
+PyMethodDef PyAL_methods[]{
+    {"forward", (PyCFunction)PyAL_forward, METH_O, "forward(x)->y"},
+    {"backward", (PyCFunction)PyAL_backward, METH_O, "backward(x)->y"},
     {NULL, NULL, 0, NULL}
 };
 
-PyGetSetDef PyAL64_getset[] = {
+PyGetSetDef PyAL_getset[] = {
     {NULL, NULL, NULL, NULL, NULL}
 };
 
-PyTypeObject PyAL64Type{
+PyTypeObject PyALType{
     PyVarObject_HEAD_INIT(NULL, 0)
     "pypearl.activation",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -312,25 +320,25 @@ PyTypeObject PyAL64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PyAL64_init,                 // tp_init
+    (initproc)PyAL_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
-PyTypeObject PyRELU64Type{
+PyTypeObject PyRELUType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.RELU64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.RELU",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -353,25 +361,25 @@ PyTypeObject PyRELU64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PyReLU64_init,                 // tp_init
+    (initproc)PyReLU_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
-PyTypeObject PyLinear64Type{
+PyTypeObject PyLinearType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.Linear64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.Linear",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -394,25 +402,25 @@ PyTypeObject PyLinear64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PyLinear64_init,                 // tp_init
+    (initproc)PyLinear_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
-PyTypeObject PySigmoid64Type{
+PyTypeObject PySigmoidType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.Sigmoid64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.Sigmoid",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -435,25 +443,25 @@ PyTypeObject PySigmoid64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PySigmoid64_init,                 // tp_init
+    (initproc)PySigmoid_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
-PyTypeObject PyLeakyReLU64Type{
+PyTypeObject PyLeakyReLUType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.LeakyReLU64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.LeakyReLU",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -476,25 +484,25 @@ PyTypeObject PyLeakyReLU64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PyLeakyReLU64_init,                 // tp_init
+    (initproc)PyLeakyReLU_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
-PyTypeObject PyStep64Type{
+PyTypeObject PyStepType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.Step64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.Step",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -517,26 +525,26 @@ PyTypeObject PyStep64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PyStep64_init,                 // tp_init
+    (initproc)PyStep_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
 // There's no way I'll ever track down all the random comments in this library
-PyTypeObject PySoftmax64Type{
+PyTypeObject PySoftmaxType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.Softmax64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.Softmax",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -559,25 +567,25 @@ PyTypeObject PySoftmax64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PySoftmax64_init,                 // tp_init
+    (initproc)PySoftmax_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
-PyTypeObject PyReverseReLU64Type{
+PyTypeObject PyReverseReLUType{
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pypearl.ReverseReLU64",                          // tp_name
-    sizeof(PyAL64),                   // tp_basicsize
+    "pypearl.ReverseReLU",                          // tp_name
+    sizeof(PyAL),                   // tp_basicsize
     0,                                       // tp_itemsize
-    (destructor)PyAL64_dealloc,            // tp_dealloc
+    (destructor)PyAL_dealloc,            // tp_dealloc
     0,                                       // tp_vectorcall_offset / tp_print (deprecated)
     0,                                       // tp_getattr
     0,                                       // tp_setattr
@@ -600,17 +608,17 @@ PyTypeObject PyReverseReLU64Type{
     0,                                       // tp_weaklistoffset
     0,                                       // tp_iter
     0,                                       // tp_iternext
-    PyAL64_methods,                         // tp_methods
+    PyAL_methods,                         // tp_methods
     0,                                       // tp_members
-    PyAL64_getset,                          // tp_getset
+    PyAL_getset,                          // tp_getset
     0,                                       // tp_base
     0,                                       // tp_dict
     0,                                       // tp_descr_get
     0,                                       // tp_descr_set
     0,                                       // tp_dictoffset
-    (initproc)PyReverseReLU64_init,                 // tp_init
+    (initproc)PyReverseReLU_init,                 // tp_init
     0,                                       // tp_alloc
-    PyAL64_new,                             // tp_new
+    PyAL_new,                             // tp_new
 };
 
 #endif

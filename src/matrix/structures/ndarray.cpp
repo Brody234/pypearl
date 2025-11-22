@@ -7,7 +7,6 @@ extern "C" {
 
 #include "ndarray.hpp"
 
-
 inline void fastGet1D4(ndarray* arr, size_t pos, void* loc){
     memcpy(loc, arr->data+pos, 4);
 }
@@ -32,7 +31,47 @@ inline void fastSet1DX(ndarray* arr, size_t pos, void* val, size_t byte_count){
     memcpy(arr->data+pos, val, byte_count);
 }
 
-inline double getDoubleFromPyObject(PyObject* value){
+void fastScalar4(ndarray* arr, void* out){
+    memcpy(out, arr->data, 4);
+}
+
+void fastScalar8(ndarray* arr, void* out){
+    memcpy(out, arr->data, 8);
+}
+
+void fastGet1D4Index(ndarray* arr, size_t pos, void* loc){
+    memcpy(loc, arr->data+arr->strides[0]*pos, 4);
+}
+
+void fastGet1D8Index(ndarray* arr, size_t pos, void* loc){
+    memcpy(loc, arr->data+arr->strides[0]*pos, 8);
+}
+
+void fastGet1DXIndex(ndarray* arr, size_t pos, void* loc, size_t byte_count){
+    memcpy(loc, arr->data+arr->strides[0]*pos, byte_count);
+}
+
+void fastSet1D4Index(ndarray* arr, size_t pos, void* val){
+    memcpy(arr->data+arr->strides[0]*pos, val, 4);
+}
+
+void fastSet1D8Index(ndarray* arr, size_t pos, void* val){
+    memcpy(arr->data+arr->strides[0]*pos, val, 8);
+}
+
+inline void fastSet1DXIndex(ndarray* arr, size_t pos, void* val, size_t byte_count){
+    memcpy(arr->data+arr->strides[0]*pos, val, byte_count);
+}
+
+void fastScalar4Index(ndarray* arr, void* out){
+    memcpy(out, arr->data, 4);
+}
+
+void fastScalar8Index(ndarray* arr, void* out){
+    memcpy(out, arr->data, 8);
+}
+
+double getDoubleFromPyObject(PyObject* value){
     return PyFloat_Check(value) ? PyFloat_AsDouble(value) : PyFloat_CheckExact(value) ? PyFloat_AsDouble(value) : PyNumber_Check(value) ? PyFloat_AsDouble(value) : (PyErr_SetString(PyExc_TypeError, "expected number"), (double)0);
 }
 
@@ -159,6 +198,20 @@ void ndForeach(ndarray* arr, func visit){
     }
 }
 
+// increase refs and incref py object. Don't do these individually.
+void ndincref(ndarray* self){
+    self->refs[0] += 1;
+    Py_INCREF(self);
+    return;
+}
+
+// decrease refs and incref py object. Don't do these individually.
+void nddecref(ndarray* self){
+    self->refs[0] -= 1;
+    Py_DECREF(self);
+    return;
+}
+
 static void
 ndarray_dealloc(ndarray *self)
 {
@@ -169,6 +222,7 @@ ndarray_dealloc(ndarray *self)
             free(self->originaldata);
             free(self->refs);
         }
+        *self->refs = c;
     }
     free(self->strides);
     free(self->dims);
@@ -324,7 +378,11 @@ ndarray_str(ndarray *self)
     _PyUnicodeWriter w; 
     _PyUnicodeWriter_Init(&w);
     w.min_length = 128;
-
+    if(self->nd == 0){
+        PyObject* num = arrayElementToPyUnicode(self, NULL);
+        _PyUnicodeWriter_WriteStr(&w, num); Py_DECREF(num);
+        return _PyUnicodeWriter_Finish(&w);
+    }
     recursiveprint(self, idx, 0, &w);
     _PyUnicodeWriter_WriteASCIIString(&w, ", shape(", 8);
     for(size_t i = 0; i < self->nd; i++){
@@ -368,14 +426,15 @@ ndarray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = { (char*)"shape", (char*)"zeros", (char*)"dtype", NULL };
+    static char *kwlist[] = { (char*)"shape", (char*)"zeros", (char*)"dtype", (char*) "scalar", NULL };
     
     PyObject *shape_obj = NULL;
     // 1 means zero everything, 0 means leave normal
     PyObject* PyZeros = Py_True;
     const char *dtypeStr = NULL;
+    PyObject* scalar = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOz", kwlist, &shape_obj, &PyZeros, &dtypeStr))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOzO", kwlist, &shape_obj, &PyZeros, &dtypeStr, &scalar))
         return -1;
 
     if (!PyBool_Check(PyZeros)) {
@@ -390,6 +449,7 @@ ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
 
     uint8_t dtype = 0x1;
     size_t datalength = 8;
+
     if(!dtypeStr){
         dtype = 0x1;
         datalength = 8;
@@ -399,7 +459,7 @@ ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
         datalength = 4;
     }
     else if(strcmp(dtypeStr, "double") == 0 || strcmp(dtypeStr, "float") == 0 || strcmp(dtypeStr, "float64") == 0){
-        dtype = 0x0;
+        dtype = 0x1;
         datalength = 8;
     }
     else if(strcmp(dtypeStr, "int32") == 0){
@@ -462,6 +522,7 @@ ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
         self->data = data;
         self->dtype = dtype;
         self->refs = refs;
+        self->originaldata = data;
 
         if(zeros && (dtype == 0x1 || dtype == 0x3)){
             ndForeach(self, zero8);
@@ -469,12 +530,53 @@ ndarray_init(ndarray *self, PyObject *args, PyObject *kwds)
         if(zeros && (dtype == 0x0 || dtype == 0x2)){
             ndForeach(self, zero4);
         }
-    }
-    if(!shape_obj){
-        return -1;
+        return 0;
     }
 
-    return 0;
+    else if(scalar){
+        char* data;
+        data = (char*) malloc(datalength * sizeof(char));
+        size_t nd = 0;
+        size_t* dims = NULL;
+        size_t* strides = NULL;
+        char* originalData = data;
+        size_t *refs = (size_t*) malloc(sizeof(size_t));
+        // Don't think of refs as an array mentally, this is just so that a bad compiler wouldn't waste time putting an 8 byte 1 on the stack just to put it into refs because that would be ridiculuous
+        refs[0] = 1;
+
+        self->nd = 0;
+        self->strides = strides;
+        self->dims = dims;
+        self->originaldata = originalData;
+        self->data = data;
+        self->refs = refs;
+        self->dtype = dtype;
+        
+        if(self->dtype == 0x0){
+            double temp = getDoubleFromPyObject(scalar);
+            float x = (float)temp;
+            fastSet1D4(self, 0, &x);
+        }
+        // float64
+        if(self->dtype == 0x1){
+            double x = getDoubleFromPyObject(scalar);
+            fastSet1D8(self, 0, &x);
+        }
+        // int 32
+        if(self->dtype == 0x2){
+            long long temp = PyLong_AsLongLong(scalar);
+            int32_t x = (int32_t) temp;
+            fastSet1D4(self, 0, &x);
+        }
+        // int 64
+        if(self->dtype == 0x3){
+            long long temp = PyLong_AsLongLong(scalar);
+            int64_t x = (int64_t) temp;
+            fastSet1D8(self, 0, &x);
+        }
+        return 0;
+    }
+    return -1;
 }
 
 int arraySetElement(ndarray arr, void* in, size_t* idx){
@@ -524,35 +626,47 @@ int arrayGetElement(ndarray arr, void* out, size_t* idx){
 }
 
 // Unsafe fast get
-inline void fastGet2D4(ndarray arr, size_t i, size_t j, void* out){
-    memcpy(out,arr.data+arr.strides[i]*arr.dims[i]+arr.strides[j]+arr.dims[j], 4);
+void fastGet2D4(ndarray* arr, size_t i, size_t j, void* out){
+    memcpy(out,arr->data+arr->strides[0]*i+arr->strides[1]*j, 4);
 }
 
 // Unsafe fast get
-inline void fastGet2D8(ndarray arr, size_t i, size_t j, void* out){
-    memcpy(out, arr.data+arr.strides[i]*arr.dims[i]+arr.strides[j]+arr.dims[j], 8);
+void fastGet2D8(ndarray* arr, size_t i, size_t j, void* out){
+    memcpy(out, arr->data+arr->strides[0]*i+arr->strides[1]*j, 8);
+}
+
+// Unsafe fast get
+void fastMove2D4(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2){
+    memcpy(out->data+out->strides[0]*i2+out->strides[1]*j2,in->data+in->strides[0]*i+in->strides[1]*j, 4);
+}
+
+// Unsafe fast move
+void fastMove2D8(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2){
+    memcpy(out->data+out->strides[0]*i2+out->strides[1]*j2,in->data+in->strides[0]*i+in->strides[1]*j, 8);
+}
+
+
+
+// Unsafe fast set
+void fastSet2D4(ndarray* arr, size_t i, size_t j, void* in){
+    memcpy(arr->data+arr->strides[0]*i+arr->strides[1]*j, in, 4);
 }
 
 // Unsafe fast set
-inline void fastSet2D4(ndarray arr, size_t i, size_t j, void* in){
-    memcpy(arr.data+arr.strides[i]*arr.dims[i]+arr.strides[j]+arr.dims[j], in, 4);
-}
-
-// Unsafe fast set
-inline void fastSet2D8(ndarray arr, size_t i, size_t j, void* in){
-    memcpy(arr.data+arr.strides[i]*arr.dims[i]+arr.strides[j]+arr.dims[j], in, 8);
+void fastSet2D8(ndarray* arr, size_t i, size_t j, void* in){
+    memcpy(arr->data+arr->strides[0]*i+arr->strides[1]*j, in, 8);
 }
 
 // int32 fast inc
-inline void fastIncInt32(ndarray arr, size_t i, size_t j, int32_t val){
-    int32_t x = (*(int32_t*) (arr.data+arr.strides[i]*arr.dims[i]+arr.strides[j]+arr.dims[j]));
+void fastIncInt32(ndarray arr, size_t i, size_t j, int32_t val){
+    int32_t x = (*(int32_t*) (arr.data+arr.strides[0]*i+arr.strides[1]+j));
     x+=val;
-    fastSet2D4(arr, i, j, &x);
+    fastSet2D4(&arr, i, j, &x);
 }
 
 // Unsafe fast get
-inline void fastIncInt64(ndarray arr, size_t i, size_t j, void* out){
-    memcpy(out, arr.data+arr.strides[i]*arr.dims[i]+arr.strides[j]+arr.dims[j], 8);
+void fastIncInt64(ndarray arr, size_t i, size_t j, void* out){
+    memcpy(out, arr.data+arr.strides[1]*i+arr.strides[0]+j, 8);
 }
 
 void printElemI32(void* elem, const size_t* idx, size_t nd){
@@ -730,7 +844,8 @@ PyTypeObject ndarrayType = {
 
 
 // WARNING DOES NOT WORK IF YOU EVER ADD A TYPE OF DATA THAT IS NOT 4n BYTES n \in \Z_{>0}
-ndarray arrayCInit(size_t nd, u_int8_t dtype, size_t* shape){
+ndarray* arrayCInit(size_t nd, u_int8_t dtype, size_t* shape){
+    // If you're following a segfault here, chances are nd > len(shape). I can't really check that in this function easily.
     // Initialize dims
     size_t* dims;
     dims = (size_t*) malloc(nd * sizeof(size_t));
@@ -770,13 +885,14 @@ ndarray arrayCInit(size_t nd, u_int8_t dtype, size_t* shape){
         strides[i] = size;
         size *= shape[i];
     }
+
     // If your fuzzer brought you here the bug is that even negative dimensions can pass this check. I don't want nd many checks.
     if(size <= 0){
         fprintf(stderr, "All dimensions must be positive!\n");
         exit(EXIT_FAILURE); 
     }    
     
-    data = (char*) malloc(size * datalength * sizeof(char));
+    data = (char*) malloc(size * sizeof(char));
 
     /*ndarray obj = {nd, dims, strides, data, dtype};
 
@@ -784,14 +900,78 @@ ndarray arrayCInit(size_t nd, u_int8_t dtype, size_t* shape){
 
     return obj;*/
     ndarray *obj = (ndarray *)ndarrayType.tp_alloc(&ndarrayType, 0);
-
     obj->nd = nd;
     obj->dims = dims;
     obj->strides = strides;
     obj->data = data;
     obj->dtype = dtype;
-    return (*obj);
+    size_t *refs = (size_t*) malloc(sizeof(size_t));
+    // Don't think of refs as an array mentally, this is just so that a bad compiler wouldn't waste time putting an 8 byte 1 on the stack just to put it into refs because that would be ridiculuous
+    refs[0] = 1;
+    obj->refs = refs;
+    obj->originaldata = data;
+    if(dtype == 0x1 || dtype == 0x3){
+        ndForeach(obj, zero8);
+    }
+    if(dtype == 0x0 || dtype == 0x2){
+        ndForeach(obj, zero4);
+    }
+    return obj;
 }
+
+// WARNING DOES NOT WORK IF YOU EVER ADD A TYPE OF DATA THAT IS NOT 4n BYTES n \in \Z_{>0}
+ndarray* arrayScalarCInit(void* value, u_int8_t dtype){
+    
+    size_t datalength = 0x0;
+    if(dtype == 0x0 || dtype == 0x2){
+        datalength = 0x4;
+    }
+    else if (dtype == 0x1 || dtype == 0x3){
+        datalength = 0x8;
+    }
+    char* data;
+
+    if(datalength == 0x0){
+        fprintf(stderr, "65 dimensions is max!\n");
+        exit(EXIT_FAILURE); 
+    }
+
+    size_t size = datalength;
+
+    
+    data = (char*) malloc(datalength * sizeof(char));
+
+    /*ndarray obj = {nd, dims, strides, data, dtype};
+
+    ndForeach(&obj, zero4);
+
+    return obj;*/
+    ndarray *obj = (ndarray *)ndarrayType.tp_alloc(&ndarrayType, 0);
+    if (!obj) {
+        // tp_alloc already set the Python error
+        return NULL;
+    }
+
+    obj->nd = 0;
+    obj->dims = nullptr;
+    obj->strides = nullptr;
+    obj->data = data;
+    obj->dtype = dtype;
+    size_t *refs = (size_t*) malloc(sizeof(size_t));
+    // Don't think of refs as an array mentally, this is just so that a bad compiler wouldn't waste time putting an 8 byte 1 on the stack just to put it into refs because that would be ridiculuous
+    refs[0] = 1;
+    obj->refs = refs;
+    obj->originaldata = data;
+    if(dtype == 0x1 || dtype == 0x3){
+        memcpy(obj->data, value, 8);
+    }
+    if(dtype == 0x0 || dtype == 0x2){
+        memcpy(obj->data, value, 4);
+    }
+
+    return obj;
+}
+
 #ifdef __cplusplus
 }
 #endif

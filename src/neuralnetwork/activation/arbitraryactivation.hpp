@@ -2,10 +2,10 @@
 #define ArbitraryActivation_HPP
 
 #include "../../matrix/matrix.hpp"
+#include "../../matrix/structures/ndarray.hpp"
 #include <cstdint>
 
 
-template <typename NumType = float>
 struct ActivationLayer {
     /*
      * Types:
@@ -24,38 +24,36 @@ struct ActivationLayer {
      * 0xc: Reverse ReLU
      */
     uint8_t type;
-    Array<NumType,2>* saved_inputs;
-    Array<NumType,2>* dinputs;
+    // float 2D
+    ndarray* saved_inputs;
+    // float 2D
+    ndarray* dinputs;
 
-    // Minimum for relu leaky relu, bar between 0 and 1 for step
-    NumType relmin;
+    // Minimum for relu leaky relu, bar between 0 and 1 for step, usually scalar
+    ndarray* relmin;
 
-    // Combine these to determine what gets sent upwards
-    Array<NumType, 2>* outputs;
+    // Combine these to determine what gets sent upwards, usually float 2x2
+    ndarray* outputs;
     bool outputOwnership;
 
-    // Used in Leaky ReLU as leaking param, using in step as the MINIMUM, Slope in slope linears
-    NumType alpha;
+    // Used in Leaky ReLU as leaking param, using in step as the MINIMUM, Slope in slope linears usually scalar
+    ndarray* alpha;
 
-    // Used in step as the maximum, derivative of alpha in PReLU, offset in slope + beta linears
-    NumType beta;
+    // Used in step as the maximum, derivative of alpha in PReLU, offset in slope + beta linears usually scalar
+    ndarray* beta;
 };
 
 
-template <typename NumType = float>
-Array<NumType, 2>* activationForward(Array<NumType, 2>* inputs, ActivationLayer<NumType>& layer);
+ndarray* activationForward(ndarray* inputs, ActivationLayer& layer);
 
-template <typename NumType = float>
-Array<NumType, 2>* activationBackward(Array<NumType, 2>* dvalues, ActivationLayer<NumType>& layer);
+ndarray* activationBackward(ndarray* dvalues, ActivationLayer& layer);
 
 
 // Warning after a call all logits and anything malloced with the address in the layer struct disappear permanently
-template <typename NumType = float>
-void freeActivationLogits(ActivationLayer<NumType>& layer);
+void freeActivationLogits(ActivationLayer& layer);
 
 // Update Tuneable Params
-template <typename NumType = float>
-void updateParams(ActivationLayer<NumType>& layer);
+void updateParams(ActivationLayer& layer);
 
 #include "arbitraryactivation.tpp"
 #endif

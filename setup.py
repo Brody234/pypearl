@@ -74,14 +74,8 @@ ext_modules = [
         name="pypearl._pypearl",
         sources=[
             "src/pybinding/binding.cpp",
-            "src/pybinding/layerbinding.cpp",
             "src/pybinding/matrixbinding.cpp",
-            "src/pybinding/activationbinding/relubinding.cpp",
-            "src/pybinding/activationbinding/softmaxbinding.cpp",
-            "src/pybinding/lossbinding/ccebinding.cpp",
-            "src/pybinding/optimizerbinding/sgdbinding.cpp",
-            "src/pybinding/modelbinding/modelbinding.cpp",
-            "src/matrix/structures/ndarray.cpp",
+            "src/matrix/structures/ndarray.cpp"
         ],
         include_dirs=[
             os.path.join(here, "src"),
@@ -93,7 +87,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.6.15",
+    version="0.6.18",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="An efficient Machine Learning Library",
