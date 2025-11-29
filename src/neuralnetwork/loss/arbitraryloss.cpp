@@ -31,7 +31,6 @@ ndarray* lossForward(ndarray* inputs, loss& self, ndarray* y_true){
                 }
 
                 float output = sum/((float)max);
-                std::cout << output << std::endl;
                 return arrayScalarCInit(&output, 0x0);
             }
         }
@@ -112,7 +111,6 @@ static ndarray* Py_loss_forward(loss *self, PyObject *args)
     }
 
     ndarray* output = lossForward(outputs, *self, y_true);
-    std::cout << "NOT IN SCALAR FUNC" << std::endl;
     return output;
 }
 

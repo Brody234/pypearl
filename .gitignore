@@ -86,3 +86,4 @@ CMakeLists.txt
 cppmake/
 src/pybinding/bindingtest.py
 test.py
+temptest.py

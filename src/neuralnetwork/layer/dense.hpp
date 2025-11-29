@@ -14,12 +14,6 @@ using std::size_t;
 
 #include "../../matrix/structures/ndarray.hpp"
 
-#include "../../matrix/matrix.hpp"
-
-#include "../utilities/matrixutility.hpp"
-#include "../utilities/vectorutility.hpp"
-#include "../testdata/viewer.hpp"
-
 typedef struct {
     PyObject_HEAD
     

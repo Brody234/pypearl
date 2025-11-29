@@ -74,7 +74,6 @@ ext_modules = [
         name="pypearl._pypearl",
         sources=[
             "src/pybinding/binding.cpp",
-            "src/pybinding/matrixbinding.cpp",
             "src/matrix/structures/ndarray.cpp"
         ],
         include_dirs=[

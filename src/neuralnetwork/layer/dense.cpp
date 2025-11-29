@@ -3,9 +3,9 @@
 
 #include "dense.hpp"
 
-#include <cblas.h>
+//#include <cblas.h>
 
-#include <arm_neon.h>
+//#include <arm_neon.h>
 
 #include <chrono>
 #include <random>
@@ -48,7 +48,7 @@ dense_dealloc(dense *self)
 
 
 
-static PyObject* layer_str(dense *self)
+static PyObject* dense_str(dense *self)
 {
     _PyUnicodeWriter w; 
     _PyUnicodeWriter_Init(&w);
@@ -152,21 +152,10 @@ ndarray* denseBackwardGen(ndarray* dval, dense& self){
     ndarray* outputs = arrayCInit(2, dtype, output_shape);
 
     if(dval->dtype == 0x0){
-        float inputval; // put input on stack
-        float weightval; // put weight on stack
+        float inputval;
+        float weightval;
         float sum;
 
-        for(size_t i = 0; i < i_max; i++){
-            for(size_t j = 0; j < j_max; j++){
-                fastGet1D4Index(self.biases, j, &sum);
-                for(size_t k = 0; k < k_max; k++){
-                    fastGet2D4(dval, i, k, &inputval);
-                    fastGet2D4(self.weights, j, k, &weightval);
-                    sum += inputval*weightval;
-                }
-                fastSet2D4(outputs, i, j, &sum);
-            }
-        }
         return outputs;
     }
     return NULL;
