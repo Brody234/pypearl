@@ -21,7 +21,7 @@ typedef struct {
     // Since every ndarray here is a pointer it would require 2 calls to memory to get the datatype of a layer instead of 1 that's why this is here.
     uint8_t dtype;
 
-    ndarray* inputSave;
+    ndarray* saved_inputs;
 
     ndarray* biases;
     ndarray* weights;

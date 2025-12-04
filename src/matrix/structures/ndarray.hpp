@@ -13,7 +13,21 @@ extern "C" {
 #include <unicodeobject.h> 
 
 /*
+ * NDArray Object
+ * 
+ * The following is a class for NDArrays, used whenever arrays are needed to store data.
+ * They support:
+ * - Multiple datatypes (int, long, float, double)
+ * - 0-65 dimensional tensors (0 being scalar)
+ * - Linear Algebra
+ */
+
+/*
  * Editors Notes
+ * 
+ * This section was originally intended to be a small class to support the library but it is slowly turning into a sublibrary.
+ * I'm not trying to replace NumPy, I just want my arrays to be internal for optimization purposes on O(n^3) functions.
+ * 
  * I kinda couldn't decide between camal case and underscores for var names because I was simulataneously thinking in Python and C.
  * Also has anyone else ever noticed some words look better in camel case and some look better with underscore.
  * 
@@ -48,8 +62,16 @@ typedef struct {
 
 // func type functions
 typedef void (*func)(void* elem, const size_t* idx, size_t nd);
+typedef void (*funcED)(void* elem, uint8_t dtype, double val);
+typedef void (*funcND2)(void* elem, void* other, uint8_t dtype);
+
 void zero4(void* elem, const size_t* idx, size_t nd);
+void zero8(void* elem, const size_t* idx, size_t nd);
+
 void ndForeach(ndarray* arr, func visit);
+void ndForeachED(ndarray* arr, funcED visit, double val);
+void ndForeachND(ndarray* arr, ndarray* other, funcND2 visit);
+
 void ndPrint(ndarray* arr);
 
 // Python handling
@@ -64,6 +86,7 @@ extern PyTypeObject ndarrayType;
 // C Functions
 ndarray* arrayCInit(size_t nd, u_int8_t dtype, size_t* dims);
 ndarray* arrayScalarCInit(void* value, u_int8_t dtype);
+ndarray* arrayCViewCreate(ndarray* old);
 void ndincref(ndarray* self);
 void nddecref(ndarray* self);
 int arrayGetElement(ndarray arr, void* out, size_t* idx);
@@ -87,6 +110,30 @@ void fastIncInt64(ndarray arr, size_t i, size_t j, void* out);
 void printElemI32(void* elem, const size_t* idx, size_t nd);
 void fastMove2D4(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
 void fastMove2D8(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
+
+void fastMultFloat32(ndarray arr, size_t i, size_t j, int32_t val);
+void fastMultFloat64(ndarray arr, size_t i, size_t j, int32_t val);
+
+ndarray* transpose(ndarray* self);
+void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta);
+
+// Math
+
+void ndadd(void* data, uint8_t dtype, double val);
+void ndsub(void* data, uint8_t dtype, double val);
+void ndmult(void* data, uint8_t dtype, double val);
+void nddiv(void* data, uint8_t dtype, double val);
+void ndaddnd(void* data, void* other, uint8_t dtype);
+
+static PyObject* PyNDArray_add(ndarray *self, PyObject *arg);
+static PyObject* PyNDArray_sub(ndarray *self, PyObject *arg);
+static PyObject* PyNDArray_mult(ndarray *self, PyObject *arg);
+static PyObject* PyNDArray_div(ndarray *self, PyObject *arg);
+
+// Python Functions
+static PyObject* PyNDArray_shape(ndarray *self);
+static ndarray* PyNDArray_transpose(ndarray *self, PyObject *arg);
+static ndarray* PyNDArray_dot(ndarray *self, PyObject *arg);
 
 
 #ifdef __cplusplus

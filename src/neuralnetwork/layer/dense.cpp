@@ -26,8 +26,8 @@ inline auto make_seed() {
 static void
 dense_dealloc(dense *self)
 {
-    if(self->inputSave)
-    Py_DECREF(self->inputSave);
+    if(self->saved_inputs)
+    Py_DECREF(self->saved_inputs);
 
     if(self->biases)
     Py_DECREF(self->biases);
@@ -64,7 +64,7 @@ dense_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     (void)kwds;
     dense *self = (dense*)type->tp_alloc(type, 0);
     if (self) {
-        self->inputSave = nullptr;
+        self->saved_inputs = nullptr;
         self->biases = nullptr;
         self->weights = nullptr;
         self->outputs = nullptr;
@@ -78,58 +78,72 @@ dense_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 // Layer Forward Generic Compiler Invariant
-ndarray* denseForwardGen(ndarray* inputs, dense& layer){
+ndarray* denseForwardGen(ndarray* inputs, dense& self){
     // put maxes on stack before loops.
     size_t i_max = inputs->dims[0]; // number of samples
-    size_t j_max = layer.biases->dims[0]; // number of outputs
+    size_t j_max = self.biases->dims[0]; // number of outputs
     size_t k_max = inputs->dims[1]; // number of weights/input sample size
 
     size_t output_shape [2];
     output_shape[0] = i_max;
     output_shape[1] = j_max;
 
-    auto dtype = layer.dtype;
+    auto dtype = self.dtype;
 
-    if(inputs->dtype != layer.dtype){
+    if(inputs->dtype != self.dtype){
         PyErr_SetString(PyExc_TypeError, "Input array data type does not line up with regular datatype. I see no reason to support mixed precision dot products they're way too inefficient. I'll just make something to flip a network between float and double as a NEW OBJECT. But no line your types up.");
         return NULL;
     }
     ndarray* outputs = arrayCInit(2, dtype, output_shape);
-
+    ndarray* saved_inputs = arrayCInit(2, dtype, inputs->dims);
+    
     if(inputs->dtype == 0x0){
+        for(size_t i = 0; i < inputs->dims[0]; i++){
+            for(size_t j = 0; j < inputs->dims[1]; j++){
+                fastMove2D4(saved_inputs, i, j, inputs, i, j);
+            }
+        }
         float inputval; // put input on stack
         float weightval; // put weight on stack
         float sum;
         for(size_t i = 0; i < i_max; i++){
             for(size_t j = 0; j < j_max; j++){
-                fastGet1D4Index(layer.biases, j, &sum);
+                fastGet1D4Index(self.biases, j, &sum);
                 for(size_t k = 0; k < k_max; k++){
                     fastGet2D4(inputs, i, k, &inputval);
-                    fastGet2D4(layer.weights, j, k, &weightval);
+                    fastGet2D4(self.weights, j, k, &weightval);
                     sum += inputval*weightval;
                 }
                 fastSet2D4(outputs, i, j, &sum);
             }
         }
-        return outputs;
+        
     }
     if(inputs->dtype == 0x1){
         double inputval; // put input on stack
         double weightval; // put weight on stack
         double sum;
+        for(size_t i = 0; i < inputs->dims[0]; i++){
+            for(size_t j = 0; j < inputs->dims[1]; j++){
+                fastMove2D8(saved_inputs, i, j, inputs, i, j);
+            }
+        }
+
         for(size_t i = 0; i < i_max; i++){
             for(size_t j = 0; j < j_max; j++){
-                fastGet1D8Index(layer.biases, j, &sum);
+                fastGet1D8Index(self.biases, j, &sum);
                 for(size_t k = 0; k < k_max; k++){
                     fastGet2D8(inputs, i, k, &inputval);
-                    fastGet2D8(layer.weights, j, k, &weightval);
+                    fastGet2D8(self.weights, j, k, &weightval);
                     sum += inputval*weightval;
                 }
                 fastSet2D8(outputs, i, j, &sum);
             }
         }
-        return outputs;
     }
+    self.saved_inputs = saved_inputs;
+    return outputs;
+
 }
 
 // Layer Forward Generic Compiler Invariant
@@ -149,16 +163,37 @@ ndarray* denseBackwardGen(ndarray* dval, dense& self){
         PyErr_SetString(PyExc_TypeError, "Input array data type does not line up with regular datatype. I see no reason to support mixed precision dot products they're way too inefficient. I'll just make something to flip a network between float and double as a NEW OBJECT. But no line your types up.");
         return NULL;
     }
-    ndarray* outputs = arrayCInit(2, dtype, output_shape);
+    
+    ndarray* dYT = transpose(dval);
 
-    if(dval->dtype == 0x0){
-        float inputval;
-        float weightval;
-        float sum;
+    ndarray* dweights = arrayCInit(2, dtype, self.weights->dims);
+    std::cout << "Backward 1" << std::endl;
+    GEMM(dYT, self.saved_inputs, dweights, NULL, NULL);
+    float temp;
+    for(size_t i = 0; i < dweights->dims[0]; i++){
+        for(size_t j = 0; j < dweights->dims[1]; j++){
+            fastGet2D4(dweights, i, j, &temp);
 
-        return outputs;
+            temp /= dval->dims[0];
+
+            fastSet2D4(dweights, i, j, &temp);
+        }
     }
-    return NULL;
+
+    ndarray* dbiases = arrayCInit(1, dtype, self.biases->dims);
+
+    ndarray* wT = transpose(self.weights);
+
+    size_t dX_shape [2];
+    dX_shape[0] = self.saved_inputs->dims[0];
+    dX_shape[1] = self.saved_inputs->dims[1];
+
+    ndarray* dX = arrayCInit(2, dtype, dX_shape);
+
+    GEMM(dval, self.weights, dX, NULL, NULL);
+
+
+    return dX;
 }
 
 // Reimplement

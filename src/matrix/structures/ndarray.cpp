@@ -7,7 +7,12 @@ extern "C" {
 
 #include "ndarray.hpp"
 
-inline void fastGet1D4(ndarray* arr, size_t pos, void* loc){
+#include "nditer.cpp"
+#include "ndmath.cpp"
+#include "ndlinalg.cpp"
+#include "ndcinit.cpp"
+
+/*inline void fastGet1D4(ndarray* arr, size_t pos, void* loc){
     memcpy(loc, arr->data+pos, 4);
 }
 
@@ -29,7 +34,7 @@ inline void fastSet1D8(ndarray* arr, size_t pos, void* val){
 
 inline void fastSet1DX(ndarray* arr, size_t pos, void* val, size_t byte_count){
     memcpy(arr->data+pos, val, byte_count);
-}
+}*/
 
 void fastScalar4(ndarray* arr, void* out){
     memcpy(out, arr->data, 4);
@@ -172,30 +177,6 @@ void zero8(void* elem, const size_t* idx, size_t nd){
     (void)nd;
     (void)idx;
     *(int64_t*)elem = 0x0;
-}
-
-void ndForeach(ndarray* arr, func visit){
-    char* cur_elem = arr->data;
-
-    size_t* cur_idx = (size_t*)malloc(arr->nd*sizeof(size_t));
-    for(size_t i = 0; i < arr->nd; i++) cur_idx[i] = 0;
-
-    for(;;){
-        (*visit)(cur_elem, cur_idx, arr->nd);
-        for(ssize_t k = (ssize_t)arr->nd-1; k >=0; k--){
-            cur_idx[k]++;
-            cur_elem+=arr->strides[k];
-
-            if(cur_idx[k]<arr->dims[k]){
-                goto next_element;
-            }
-            cur_elem -= arr->strides[k]*arr->dims[k];
-            cur_idx[k] = 0;
-        }
-        break;
-        next_element:
-        ;
-    }
 }
 
 // Just use Py_INCREF, this is deprecated.
@@ -708,185 +689,6 @@ void ndPrint(ndarray* arr){
 
 // Py Function Implementations
 
-// A general GEMM. It's unoptimized but secure.
-void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta){
-    if(A->nd != 2 || B->nd != 2 || C->nd != 2){
-        perror("Critical NDGEMM Error: A, B, C must be 2x2");
-        exit(EXIT_FAILURE); 
-        return;
-    }
-    if(B->dims[0] != A->dims[1]){
-        perror("Critical NDGEMM Error: Inner dimensions of A, B must align");
-        exit(EXIT_FAILURE); 
-        return;
-    }
-    if(C->dims[0] != A->dims[0] || C->dims[1] != B->dims[1]){
-        perror("Critical NDGEMM Error: C must be of shape(A.shape(0), B.shape(1))");
-        exit(EXIT_FAILURE); 
-        return;
-    }   
-    
-    // determine if alpha and beta are used
-    bool alpha_bypass = false;
-    bool beta_bypass = false;
-    if(!alpha){
-        alpha_bypass = true;
-    } 
-    else if(alpha && alpha->nd != 0){
-        perror("alpha must be a ndarray scalar, ignoring alpha");
-        alpha_bypass = true;
-    }
-
-    if(!beta){
-        beta_bypass= true;
-    } 
-    else if(beta && beta->nd != 0){
-        perror("beta must be a ndarray scalar, ignoring beta");
-        beta_bypass = true;
-    }
-
-    u_int8_t dtype = A->dtype;
-    if(dtype != B->dtype || dtype != C->dtype || (!alpha_bypass && dtype != alpha->dtype) || (!beta_bypass && dtype != beta->dtype)){
-        perror("Critical NDGEMM Error: Mixed precision is not allowed.");
-        exit(EXIT_FAILURE); 
-        return;
-
-    }
-
-    bool c_blank = false;
-    if(dtype == 0x0){
-        c_blank = true;
-        float check;
-        for(size_t i = 0; i < C->dims[0]; i++){
-            for (size_t j = 0; j < C->dims[1]; j++){
-                fastGet2D4(C, i, j, &check);
-                if(check != 0){
-                    c_blank = false;
-                }
-            }
-        }
-    }
-    if(dtype == 0x1){
-        c_blank = true;
-        double check;
-        for(size_t i = 0; i < C->dims[0]; i++){
-            for (size_t j = 0; j < C->dims[1]; j++){
-                fastGet2D4(C, i, j, &check);
-                if(check != 0){
-                    c_blank = false;
-                }
-            }
-        }
-    }   
-
-    if(!beta_bypass && !c_blank){
-        if(dtype == 0x0){
-            float b_val;
-            fastGet1D4(beta, 0, &b_val);
-            for(size_t i = 0; i < C->dims[0]; i++){
-                for(size_t j = 0; j < C->dims[1]; j++){
-                    fastMultFloat32(*C, i, j, b_val);
-                }
-            }
-        }
-        else if(dtype == 0x1){
-            double b_val;
-            fastGet1D8(beta, 0, &b_val);
-            for(size_t i = 0; i < C->dims[0]; i++){
-                for(size_t j = 0; j < C->dims[1]; j++){
-                    fastMultFloat64(*C, i, j, b_val);
-                }
-            }
-        }
-    }
-    if(alpha_bypass){
-        if(A->dtype == 0x0){
-            size_t i_max = A->dims[0];
-            size_t j_max = B->dims[1];
-            size_t k_max = A->dims[1];
-            float a_ik; // put input on stack
-            float b_jk; // put weight on stack
-            float c_ij;
-            for(size_t i = 0; i < i_max; i++){
-                for(size_t j = 0; j < j_max; j++){
-                    c_ij = 0;
-                    for(size_t k = 0; k < k_max; k++){
-                        fastGet2D4(A, i, k, &a_ik);
-                        fastGet2D4(B, k, j, &b_jk);
-                        c_ij += a_ik*b_jk;
-                    }
-                    fastSet2D4(C, i, j, &c_ij);
-                }
-            }
-        }
-        else if(A->dtype == 0x1){
-            size_t i_max = A->dims[0];
-            size_t j_max = B->dims[1];
-            size_t k_max = A->dims[1];
-            double a_ik; // put input on stack
-            double b_jk; // put weight on stack
-            double c_ij;
-            for(size_t i = 0; i < i_max; i++){
-                for(size_t j = 0; j < j_max; j++){
-                    c_ij = 0;
-                    for(size_t k = 0; k < k_max; k++){
-                        fastGet2D8(A, i, k, &a_ik);
-                        fastGet2D8(B, k, j, &b_jk);
-                        c_ij += a_ik*b_jk;
-                    }
-                    fastSet2D8(C, i, j, &c_ij);
-                }
-            }
-        }
-    }
-    else{
-        if(A->dtype == 0x0){
-            float a_val;
-            fastGet1D4(alpha, 0, &a_val);
-            size_t i_max = A->dims[0];
-            size_t j_max = B->dims[1];
-            size_t k_max = A->dims[1];
-            float a_ik; // put input on stack
-            float b_jk; // put weight on stack
-            float c_ij;
-            for(size_t i = 0; i < i_max; i++){
-                for(size_t j = 0; j < j_max; j++){
-                    c_ij = 0;
-                    for(size_t k = 0; k < k_max; k++){
-                        fastGet2D4(A, i, k, &a_ik);
-                        fastGet2D4(B, k, j, &b_jk);
-                        c_ij += a_ik*b_jk;
-                    }
-                    c_ij *= a_val;
-                    fastSet2D4(C, i, j, &c_ij);
-                }
-            }
-        }
-        else if(A->dtype == 0x1){
-            double a_val;
-            fastGet1D8(alpha, 0, &a_val);
-            size_t i_max = A->dims[0];
-            size_t j_max = B->dims[1];
-            size_t k_max = A->dims[1];
-            double a_ik; // put input on stack
-            double b_jk; // put weight on stack
-            double c_ij;
-            for(size_t i = 0; i < i_max; i++){
-                for(size_t j = 0; j < j_max; j++){
-                    c_ij = 0;
-                    for(size_t k = 0; k < k_max; k++){
-                        fastGet2D8(A, i, k, &a_ik);
-                        fastGet2D8(B, k, j, &b_jk);
-                        c_ij += a_ik*b_jk;
-                    }
-                    fastSet2D8(C, i, j, &c_ij);
-                }
-            }
-        }
-
-    }
-}
-
 
 ndarray* transpose(ndarray* self){
     ndarray* output = arrayCViewCreate(self);
@@ -894,9 +696,13 @@ ndarray* transpose(ndarray* self){
         size_t temp = output->dims[0];
         output->dims[0] = output->dims[1];
         output->dims[1] = temp;
-        return output;
+        temp = output->strides[0];
+        output->strides[0] = output->strides[1];
+        output->strides[1] = temp;
     }
+    return output;
 }
+
 // Py Function Wrappers
 
 static ndarray* PyNDArray_dot(ndarray *self, PyObject *arg){
@@ -949,6 +755,7 @@ static PyObject* PyNDArray_shape(ndarray *self){
     return output;
 }
 
+
 PyMethodDef ndarray_methods[] = {
     /*{"get", (PyCFunction)PyArrayD1_get, METH_VARARGS,
      "get(index) -> float\n\n"
@@ -958,6 +765,10 @@ PyMethodDef ndarray_methods[] = {
     {"shape", (PyCFunction)PyNDArray_shape, METH_NOARGS, "shape of array"},
     {"dot", (PyCFunction)PyNDArray_dot, METH_O, "A dot B"},
     {"transpose", (PyCFunction)PyNDArray_transpose, METH_O, "transposes an array"},
+    {"add", (PyCFunction)PyNDArray_add, METH_O, "adds a number to an array"},
+    {"sub", (PyCFunction)PyNDArray_sub, METH_O, "subtracts a number from an array"},
+    {"mult", (PyCFunction)PyNDArray_mult, METH_O, "multiplies a number to an array"},
+    {"div", (PyCFunction)PyNDArray_div, METH_O, "divides a number from an array"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -1015,12 +826,14 @@ static int ndarray_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
             double temp = getDoubleFromPyObject(value);
             float x = (float)temp;
             fastSet1D4(arr, pos, &x);
+            if (PyErr_Occurred()) {return -1;}
             return 0;
         }
         // float64
         if(arr->dtype == 0x1){
             double x = getDoubleFromPyObject(value);
             fastSet1D8(arr, pos, &x);
+            if (PyErr_Occurred()) {return -1;}
             return 0;
         }
         // int 32
@@ -1028,6 +841,7 @@ static int ndarray_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
             long long temp = PyLong_AsLongLong(value);
             int32_t x = (int32_t) temp;
             fastSet1D4(arr, pos, &x);
+            if (PyErr_Occurred()) {return -1;}
             return 0;
         }
         // int 64
@@ -1035,6 +849,7 @@ static int ndarray_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
             long long temp = PyLong_AsLongLong(value);
             int64_t x = (int64_t) temp;
             fastSet1D8(arr, pos, &x);
+            if (PyErr_Occurred()) {return -1;}
             return 0;
         }
         return -1;
@@ -1108,171 +923,6 @@ PyTypeObject ndarrayType = {
     0,                               // tp_alloc
     ndarray_new                    // tp_new
 };
-
-
-// WARNING DOES NOT WORK IF YOU EVER ADD A TYPE OF DATA THAT IS NOT 4n BYTES n \in \Z_{>0}
-ndarray* arrayCInit(size_t nd, u_int8_t dtype, size_t* shape){
-    // If you're following a segfault here, chances are nd > len(shape). I can't really check that in this function easily.
-    // Initialize dims
-    size_t* dims;
-    dims = (size_t*) malloc(nd * sizeof(size_t));
-
-    size_t* strides;
-    strides = (size_t*) malloc(nd * sizeof(size_t));
-
-
-    size_t datalength = 0x0;
-    if(dtype == 0x0 || dtype == 0x2){
-        datalength = 0x4;
-    }
-    else if (dtype == 0x1 || dtype == 0x3){
-        datalength = 0x8;
-    }
-    char* data;
-
-    if(datalength == 0x0){
-        fprintf(stderr, "65 dimensions is max!\n");
-        exit(EXIT_FAILURE); 
-    }
-
-    size_t size = datalength;
-
-    // Let's my LCV be a long, old numpy docs say max dims is 64 so I am one upping NumPy
-    if(nd > 66){
-        fprintf(stderr, "65 dimensions is max!\n");
-        exit(EXIT_FAILURE); 
-    }
-    if(nd == 0){
-        fprintf(stderr, "You wrote 0 dimensions!\n");
-        exit(EXIT_FAILURE); 
-    }
-    // Initialize dims and strides
-    for(long i = nd-1; i >= 0; i--){
-        dims[i] = shape[i];
-        strides[i] = size;
-        size *= shape[i];
-    }
-
-    // If your fuzzer brought you here the bug is that even negative dimensions can pass this check. I don't want nd many checks.
-    if(size <= 0){
-        fprintf(stderr, "All dimensions must be positive!\n");
-        exit(EXIT_FAILURE); 
-    }    
-    
-    data = (char*) malloc(size * sizeof(char));
-
-    /*ndarray obj = {nd, dims, strides, data, dtype};
-
-    ndForeach(&obj, zero4);
-
-    return obj;*/
-    ndarray *obj = (ndarray *)ndarrayType.tp_alloc(&ndarrayType, 0);
-    obj->nd = nd;
-    obj->dims = dims;
-    obj->strides = strides;
-    obj->data = data;
-    obj->dtype = dtype;
-    size_t *refs = (size_t*) malloc(sizeof(size_t));
-    // Don't think of refs as an array mentally, this is just so that a bad compiler wouldn't waste time putting an 8 byte 1 on the stack just to put it into refs because that would be ridiculuous
-    refs[0] = 1;
-    obj->refs = refs;
-    obj->originaldata = data;
-    if(dtype == 0x1 || dtype == 0x3){
-        ndForeach(obj, zero8);
-    }
-    if(dtype == 0x0 || dtype == 0x2){
-        ndForeach(obj, zero4);
-    }
-    return obj;
-}
-
-// WARNING DOES NOT WORK IF YOU EVER ADD A TYPE OF DATA THAT IS NOT 4n BYTES n \in \Z_{>0}
-ndarray* arrayScalarCInit(void* value, u_int8_t dtype){
-    
-    size_t datalength = 0x0;
-    if(dtype == 0x0 || dtype == 0x2){
-        datalength = 0x4;
-    }
-    else if (dtype == 0x1 || dtype == 0x3){
-        datalength = 0x8;
-    }
-    char* data;
-
-    if(datalength == 0x0){
-        fprintf(stderr, "65 dimensions is max!\n");
-        exit(EXIT_FAILURE); 
-    }
-
-    size_t size = datalength;
-
-    
-    data = (char*) malloc(datalength * sizeof(char));
-
-    /*ndarray obj = {nd, dims, strides, data, dtype};
-
-    ndForeach(&obj, zero4);
-
-    return obj;*/
-    ndarray *obj = (ndarray *)ndarrayType.tp_alloc(&ndarrayType, 0);
-    if (!obj) {
-        // tp_alloc already set the Python error
-        return NULL;
-    }
-
-    obj->nd = 0;
-    obj->dims = nullptr;
-    obj->strides = nullptr;
-    obj->data = data;
-    obj->dtype = dtype;
-    size_t *refs = (size_t*) malloc(sizeof(size_t));
-    // Don't think of refs as an array mentally, this is just so that a bad compiler wouldn't waste time putting an 8 byte 1 on the stack just to put it into refs because that would be ridiculuous
-    refs[0] = 1;
-    obj->refs = refs;
-    obj->originaldata = data;
-    if(dtype == 0x1 || dtype == 0x3){
-        memcpy(obj->data, value, 8);
-    }
-    if(dtype == 0x0 || dtype == 0x2){
-        memcpy(obj->data, value, 4);
-    }
-
-    return obj;
-}
-
-
-// WARNING DOES NOT WORK IF YOU EVER ADD A TYPE OF DATA THAT IS NOT 4n BYTES n \in \Z_{>0}
-ndarray* arrayCViewCreate(ndarray* old){
-    // If you're following a segfault here, chances are nd > len(shape). I can't really check that in this function easily.
-    // Initialize dims
-    size_t* dims;
-    dims = (size_t*) malloc(old->nd * sizeof(size_t));
-
-    size_t* strides;
-    strides = (size_t*) malloc(old->nd * sizeof(size_t));
-
-
-    char* data;
-
-    for(long i = 0; i < old->nd; i++){
-        dims[i] = old->dims[i];
-        strides[i] = old->strides[i];
-    }
-
-
-    ndarray *obj = (ndarray *)ndarrayType.tp_alloc(&ndarrayType, 0);
-    obj->nd = old->nd;
-    obj->dims = dims;
-    obj->strides = strides;
-    obj->data = data;
-    obj->dtype = old->dtype;
-    
-    // Don't think of refs as an array mentally, this is just so that a bad compiler wouldn't waste time putting an 8 byte 1 on the stack just to put it into refs because that would be ridiculuous
-    old->refs[0] += 1;
-    obj->refs = old->refs;
-    obj->originaldata = old->originaldata;
-
-    return obj;
-}
 
 #ifdef __cplusplus
 }
