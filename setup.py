@@ -74,8 +74,7 @@ ext_modules = [
         name="pypearl._pypearl",
         sources=[
             "src/pybinding/binding.cpp",
-            "src/matrix/structures/ndarray.cpp",
-
+            "src/matrix/structures/ndarray.cpp"
         ],
         include_dirs=[
             os.path.join(here, "src"),
@@ -87,7 +86,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.6.21",
+    version="0.7.9",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="An efficient Machine Learning Library",

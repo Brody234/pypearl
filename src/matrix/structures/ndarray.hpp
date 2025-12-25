@@ -114,8 +114,10 @@ void printElemI32(void* elem, const size_t* idx, size_t nd);
 void fastMove2D4(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
 void fastMove2D8(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
 
-void fastMultFloat32(ndarray arr, size_t i, size_t j, int32_t val);
-void fastMultFloat64(ndarray arr, size_t i, size_t j, int32_t val);
+void fastIncFloat32(ndarray* arr, size_t i, size_t j, float val);
+void fastIncFloat64(ndarray* arr, size_t i, size_t j, double val);
+void fastMultFloat32(ndarray* arr, size_t i, size_t j, float val);
+void fastMultFloat64(ndarray* arr, size_t i, size_t j, double val);
 
 ndarray* transpose(ndarray* self);
 void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta);

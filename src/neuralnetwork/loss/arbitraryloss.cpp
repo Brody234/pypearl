@@ -41,6 +41,9 @@ ndarray* lossForward(ndarray* inputs, loss& self, ndarray* y_true){
 ndarray* lossBackward(ndarray* inputs, loss& self, ndarray* y_true){
     if(self.type == 0x0){
         ndarray* dinputs = arrayCInit(2, inputs->dtype, inputs->dims);
+        if(self.dinputs){
+            Py_DecRef((PyObject*) self.dinputs);
+        }
         self.dinputs = dinputs;
         if(y_true->nd == 1){
             if(y_true->dtype != 0x3){
@@ -64,7 +67,7 @@ ndarray* lossBackward(ndarray* inputs, loss& self, ndarray* y_true){
                 size_t j;
                 float num;
                 for (size_t i = 0; i < length; ++i) {
-                    fastGet1D8Index(y_true, i, &j);
+                    fastGet1D8Index(y_true, i, &j); // THIS IS SUPPOSED TO BE 8 BYTES DO NOT CHANGE
                     fastGet2D4(inputs, i, j, &pyi);
                     if (pyi < eps) pyi = eps;
                     num = -invN / pyi;
@@ -111,6 +114,7 @@ static ndarray* Py_loss_forward(loss *self, PyObject *args)
     }
 
     ndarray* output = lossForward(outputs, *self, y_true);
+    Py_IncRef((PyObject*) output);
     return output;
 }
 
@@ -219,7 +223,7 @@ PyTypeObject lossCCEType = {
     0,                               // tp_setattro
     0,                               // tp_as_buffer
     Py_TPFLAGS_DEFAULT,              // tp_flags
-    "Loss",              // tp_doc
+    "Categorical Cross Entropy Loss",              // tp_doc
     0,                               // tp_traverse
     0,                               // tp_clear
     0,                               // tp_richcompare

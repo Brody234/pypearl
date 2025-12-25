@@ -24,6 +24,9 @@ ndarray* activationForward(ndarray* inputs, ActivationLayer& layer){
     ndarray* pout = arrayCInit(0x2, inputs->dtype, inputs->dims);
     layer.outputs = pout;
 
+    Py_INCREF(layer.outputs);
+    
+    
     // ReLU Arbitrary Minimum
     if(layer.type == 0x0){
             // This is split outside of the loop rather than inside because creating n^2 boolean checks/branching operations is insane and I'm not gonna trust compiler optimizers on this one since in theory it's not the same thing but only an exploit would change anything but whatever this applies to everywhere in this file I'm only writing this once so deal with it ig shoutout casey muratori
@@ -539,10 +542,11 @@ ndarray* activationBackward(ndarray* dvalues, ActivationLayer& layer){
 
     }
 
+
     ndarray* din = arrayCInit(0x2, layer.saved_inputs->dtype, layer.saved_inputs->dims);
     layer.dinputs = din;
 
-
+    Py_INCREF(layer.dinputs);
     // ReLU Arbitrary Minimum
     if(layer.type == 0x0){
         if(!layer.saved_inputs){

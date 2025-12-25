@@ -195,13 +195,17 @@ static void
 ndarray_dealloc(ndarray *self)
 {
     if(self->refs){
-        size_t c = (*self->refs)-1;
-
-        if(c<=0){
+        size_t c = (*self->refs);
+        if(c<=1){
             free(self->originaldata);
             free(self->refs);
         }
-        *self->refs = c;
+        else{
+            c=-1;
+
+            *self->refs = c;
+        }
+
     }
     free(self->strides);
     free(self->dims);
@@ -648,28 +652,28 @@ void fastIncInt64(ndarray arr, size_t i, size_t j, void* out){
     memcpy(out, arr.data+arr.strides[1]*i+arr.strides[0]*j, 8);
 }
 
-void fastIncFloat32(ndarray arr, size_t i, size_t j, int32_t val){
-    float x = (*(float*) (arr.data+arr.strides[0]*i+arr.strides[1]*j));
+void fastIncFloat32(ndarray* arr, size_t i, size_t j, float val){
+    float x = (*(float*) (arr->data+arr->strides[0]*i+arr->strides[1]*j));
     x+=val;
-    fastSet2D4(&arr, i, j, &x);
+    fastSet2D4(arr, i, j, &x);
 }
 
-void fastIncFloat64(ndarray arr, size_t i, size_t j, int32_t val){
-    double x = (*(double*) (arr.data+arr.strides[0]*i+arr.strides[1]*j));
+void fastIncFloat64(ndarray* arr, size_t i, size_t j, double val){
+    double x = (*(double*) (arr->data+arr->strides[0]*i+arr->strides[1]*j));
     x+=val;
-    fastSet2D8(&arr, i, j, &x);
+    fastSet2D8(arr, i, j, &x);
 }
 
-void fastMultFloat32(ndarray arr, size_t i, size_t j, int32_t val){
-    float x = (*(float*) (arr.data+arr.strides[0]*i+arr.strides[1]*j));
-    x+=val;
-    fastSet2D4(&arr, i, j, &x);
+void fastMultFloat32(ndarray* arr, size_t i, size_t j, float val){
+    float x = (*(float*) (arr->data+arr->strides[0]*i+arr->strides[1]*j));
+    x*=val;
+    fastSet2D4(arr, i, j, &x);
 }
 
-void fastMultFloat64(ndarray arr, size_t i, size_t j, int32_t val){
-    double x = (*(double*) (arr.data+arr.strides[0]*i+arr.strides[1]*j));
-    x+=val;
-    fastSet2D8(&arr, i, j, &x);
+void fastMultFloat64(ndarray* arr, size_t i, size_t j, double val){
+    double x = (*(double*) (arr->data+arr->strides[0]*i+arr->strides[1]*j));
+    x*=val;
+    fastSet2D8(arr, i, j, &x);
 }
 
 

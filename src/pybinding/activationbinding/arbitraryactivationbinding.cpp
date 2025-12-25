@@ -266,7 +266,6 @@ static ndarray * PyAL_backward(PyAL *self, PyObject *arg){
     ndarray *input = (ndarray*)arg;
 
     try {
-        std::cout << "Calling back" << std::endl;
         ndarray* y = activationBackward(input, (*activation->data));
         if(y){
             return y;

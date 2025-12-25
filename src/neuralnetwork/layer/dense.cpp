@@ -44,6 +44,8 @@ dense_dealloc(dense *self)
     if(self->dweights)
     Py_DECREF(self->dweights);
 
+    Py_TYPE(self)->tp_free((PyObject *)self);
+
 }
 
 
@@ -100,7 +102,7 @@ ndarray* denseForwardGen(ndarray* inputs, dense& self){
     if(inputs->dtype == 0x0){
         for(size_t i = 0; i < inputs->dims[0]; i++){
             for(size_t j = 0; j < inputs->dims[1]; j++){
-                fastMove2D4(saved_inputs, i, j, inputs, i, j);
+                fastMove2D4(inputs, i, j, saved_inputs, i, j);
             }
         }
         float inputval; // put input on stack
@@ -125,7 +127,7 @@ ndarray* denseForwardGen(ndarray* inputs, dense& self){
         double sum;
         for(size_t i = 0; i < inputs->dims[0]; i++){
             for(size_t j = 0; j < inputs->dims[1]; j++){
-                fastMove2D8(saved_inputs, i, j, inputs, i, j);
+                fastMove2D8(inputs, i, j, saved_inputs, i, j);
             }
         }
 
@@ -140,6 +142,9 @@ ndarray* denseForwardGen(ndarray* inputs, dense& self){
                 fastSet2D8(outputs, i, j, &sum);
             }
         }
+    }
+    if(self.saved_inputs){
+        Py_DECREF(self.saved_inputs);
     }
     self.saved_inputs = saved_inputs;
     return outputs;
@@ -167,13 +172,12 @@ ndarray* denseBackwardGen(ndarray* dval, dense& self){
     ndarray* dYT = transpose(dval);
 
     ndarray* dweights = arrayCInit(2, dtype, self.weights->dims);
-    std::cout << "Backward 1" << std::endl;
+    
     GEMM(dYT, self.saved_inputs, dweights, NULL, NULL);
     float temp;
     for(size_t i = 0; i < dweights->dims[0]; i++){
         for(size_t j = 0; j < dweights->dims[1]; j++){
             fastGet2D4(dweights, i, j, &temp);
-
             temp /= dval->dims[0];
 
             fastSet2D4(dweights, i, j, &temp);
@@ -182,6 +186,25 @@ ndarray* denseBackwardGen(ndarray* dval, dense& self){
 
     ndarray* dbiases = arrayCInit(1, dtype, self.biases->dims);
 
+    float tmp;
+    for (size_t j = 0; j < dbiases->dims[0]; j++) {
+        float sum = 0.0f;
+        for (size_t i = 0; i < dval->dims[0]; i++) {
+            fastGet2D4(dval, i, j, &tmp);
+            sum += tmp;
+        }
+        sum /= (float)dval->dims[0];
+        fastSet1D4Index(dbiases, j, &sum); 
+    }
+
+    if(self.dweights){
+        Py_DECREF((PyObject*)self.dweights);
+    }
+    if(self.dbiases){
+        Py_DECREF((PyObject*)self.dbiases);
+    }
+    self.dweights = dweights;
+    self.dbiases = dbiases;
     ndarray* wT = transpose(self.weights);
 
     size_t dX_shape [2];
@@ -421,10 +444,10 @@ dense_init(dense *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = { (char*)"prev_layer_size", (char*)"neurons", (char*)"dtype", NULL };
     
     const char *dtypeStr = NULL;
-    ssize_t prev_layer;
-    ssize_t neurons;
+    Py_ssize_t prev_layer;
+    Py_ssize_t neurons;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "ii|z", kwlist, &prev_layer, &neurons, &dtypeStr))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nn|z", kwlist, &prev_layer, &neurons, &dtypeStr))
         return -1;
 
     uint8_t dtype = 0x1;
@@ -454,10 +477,10 @@ dense_init(dense *self, PyObject *args, PyObject *kwds)
 
     
     size_t bias_shape [1];
-    bias_shape[0] = neurons;
+    bias_shape[0] = (size_t)neurons;
     size_t weight_shape [2];
-    weight_shape[0] = neurons;
-    weight_shape[1] = prev_layer;
+    weight_shape[0] = (size_t)neurons;
+    weight_shape[1] = (size_t)prev_layer;
 
     self->dtype = dtype;
 
@@ -467,10 +490,10 @@ dense_init(dense *self, PyObject *args, PyObject *kwds)
     if(dtype == 0x0){
         std::uniform_real_distribution<float> dis(-sqrt(6.0f/(prev_layer+neurons)), sqrt(6.0f/(prev_layer+neurons)));
         auto gen = make_seed();
+
         float temp;
         for(ssize_t i = 0; i < neurons; i++){
             temp = 0.5f*dis(gen);
-            //std::cout << "Bias #" << i << ": " << temp << std::endl;
             fastSet1D4Index(self->biases, i, &temp);
         }
         for(ssize_t i = 0; i < neurons; i++){
@@ -485,6 +508,7 @@ dense_init(dense *self, PyObject *args, PyObject *kwds)
         std::uniform_real_distribution<double> dis(-sqrt(6.0f/(prev_layer+neurons)), sqrt(6.0f/(prev_layer+neurons)));
 
         auto gen = make_seed();
+
         double temp;
         for(size_t i = 0; i < neurons; i++){
             temp = 0.5f*dis(gen);

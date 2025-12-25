@@ -125,7 +125,7 @@ void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta){
             fastGet1D4(beta, 0, &b_val);
             for(size_t i = 0; i < C->dims[0]; i++){
                 for(size_t j = 0; j < C->dims[1]; j++){
-                    fastMultFloat32(*C, i, j, b_val);
+                    fastMultFloat32(C, i, j, b_val);
                 }
             }
         }
@@ -134,12 +134,13 @@ void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta){
             fastGet1D8(beta, 0, &b_val);
             for(size_t i = 0; i < C->dims[0]; i++){
                 for(size_t j = 0; j < C->dims[1]; j++){
-                    fastMultFloat64(*C, i, j, b_val);
+                    fastMultFloat64(C, i, j, b_val);
                 }
             }
         }
     }
     if(alpha_bypass){
+
         if(A->dtype == 0x0){
             size_t i_max = A->dims[0];
             size_t j_max = B->dims[1];
@@ -147,18 +148,19 @@ void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta){
             float a_ik; // put input on stack
             float b_jk; // put weight on stack
             float c_ij;
-            printf("%0x", A->data);
             for(size_t i = 0; i < i_max; i++){
                 for(size_t j = 0; j < j_max; j++){
                     c_ij = 0;
                     for(size_t k = 0; k < k_max; k++){
                         fastGet2D4(A, i, k, &a_ik);
                         fastGet2D4(B, k, j, &b_jk);
+
                         c_ij += a_ik*b_jk;
                     }
                     fastSet2D4(C, i, j, &c_ij);
                 }
             }
+
         }
         else if(A->dtype == 0x1){
             size_t i_max = A->dims[0];
@@ -227,6 +229,11 @@ void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta){
 
     }
 }
+
+/*
+ * Section 3: Factorization
+*/
+
 
 #ifdef __cplusplus
 }

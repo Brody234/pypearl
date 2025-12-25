@@ -5,9 +5,10 @@
 //#include "./optimizerbinding/sgdbinding.hpp"
 //#include "./modelbinding/modelbinding.hpp"
 #include "neuralnetwork/loss/arbitraryloss.hpp"
+#include "neuralnetwork/optimizer/arbitraryoptimizer.hpp"
+#include "abstract/groups/dihedral.hpp"
 
-
-PyObject *add(PyObject *self, PyObject *args){
+PyObject* add(PyObject *self, PyObject *args){
     int x;
     int y;  
 
@@ -131,6 +132,32 @@ PyInit__pypearl(void)
     }
     Py_INCREF(&lossCCEType);
     PyModule_AddObject(m, "CCE", (PyObject*)&lossCCEType);
+
+    if (PyType_Ready(&optimGDType) < 0) {
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&optimGDType);
+    PyModule_AddObject(m, "GradientDescent", (PyObject*)&optimGDType);
+
+    // Abstract Algebra
+    // Abstract Algebra
+if (PyType_Ready(&dihedralType) < 0) {
+    PyErr_Print();  // Print the actual error
+    Py_DECREF(m); 
+    return NULL;
+}
+Py_INCREF(&dihedralType);
+
+int result = PyModule_AddObject(m, "Dihedral", (PyObject*)&dihedralType);
+if (result < 0) {
+    PyErr_Print();  // Print any Python exception
+    Py_DECREF(&dihedralType);
+    Py_DECREF(m);
+    return NULL;
+}
+
+
 
     return m; 
 }  
