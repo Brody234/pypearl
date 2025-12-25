@@ -113,7 +113,25 @@ class ndarray:
 
 class Dihedral:
     def __init__(self, s: int, n: int, r: int) -> None: ...
-    def __add__(self, other: Dihedral) -> ndarray: ...
+    def __add__(self, other: Dihedral) -> Dihedral: ...
+    def __radd__(self, other: Dihedral) -> Dihedral: ...
+
+    @property
+    def s(self): int
+    @property
+    def r(self): int
+    @property
+    def n(self): int
+
+class ZNZ:
+    def __init__(self, n: int, rep: int) -> None: ...
+    def __add__(self, other: ZNZ) -> ZNZ: ...
+    def __radd__(self, other: ZNZ) -> ZNZ: ...
+
+    @property
+    def rep(self): int
+    @property
+    def n(self): int
 
 
 def breed_models(model1: Model, model2: Model, prop: float) -> Model: ...

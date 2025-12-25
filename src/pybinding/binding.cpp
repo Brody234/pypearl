@@ -7,6 +7,8 @@
 #include "neuralnetwork/loss/arbitraryloss.hpp"
 #include "neuralnetwork/optimizer/arbitraryoptimizer.hpp"
 #include "abstract/groups/dihedral.hpp"
+#include "abstract/groups/znz.hpp"
+
 
 PyObject* add(PyObject *self, PyObject *args){
     int x;
@@ -141,21 +143,35 @@ PyInit__pypearl(void)
     PyModule_AddObject(m, "GradientDescent", (PyObject*)&optimGDType);
 
     // Abstract Algebra
-    // Abstract Algebra
-if (PyType_Ready(&dihedralType) < 0) {
-    PyErr_Print();  // Print the actual error
-    Py_DECREF(m); 
-    return NULL;
-}
-Py_INCREF(&dihedralType);
+    if (PyType_Ready(&dihedralType) < 0) {
+        PyErr_Print();  // Print the actual error
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&dihedralType);
 
-int result = PyModule_AddObject(m, "Dihedral", (PyObject*)&dihedralType);
-if (result < 0) {
-    PyErr_Print();  // Print any Python exception
-    Py_DECREF(&dihedralType);
-    Py_DECREF(m);
-    return NULL;
-}
+    int result = PyModule_AddObject(m, "Dihedral", (PyObject*)&dihedralType);
+    if (result < 0) {
+        PyErr_Print();  // Print any Python exception
+        Py_DECREF(&dihedralType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    if (PyType_Ready(&znzType) < 0) {
+        PyErr_Print();  // Print the actual error
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&znzType);
+
+    result = PyModule_AddObject(m, "ZNZ", (PyObject*)&znzType);
+    if (result < 0) {
+        PyErr_Print();  // Print any Python exception
+        Py_DECREF(&znzType);
+        Py_DECREF(m);
+        return NULL;
+    }
 
 
 

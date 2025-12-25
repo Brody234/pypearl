@@ -90,6 +90,35 @@ static PyObject* PyDihedral_add_new(PyObject *Pyself, PyObject *arg){
     return (PyObject*) self;
 }
 
+static PyObject* PyDihedral_add(PyObject *Pyself, PyObject *arg){
+    dihedral* d1 = (dihedral*) Pyself;
+    dihedral* d2 = (dihedral*) arg;
+
+
+    if(d1->n != d2->n){
+        PyErr_SetString(PyExc_TypeError, "Cannot add two dihedral elements from unequal dihedral groups.");
+        return NULL;
+    }
+    int64_t new_r = d1->r;
+
+    //rs
+    if(d1->s == 1){
+        new_r += d1->n-d2->r;
+    }
+    else{
+        new_r += d2->r;
+    }
+
+    new_r %= d1->n;
+    int64_t new_s = (d1->s+d2->s)%2;
+
+    d1->s = new_s;
+    d1->r = new_r;
+    Py_INCREF(d1);
+    return (PyObject*) d1;
+}
+
+
 static PyObject* PyDihedral_richcompare(PyObject* a, PyObject* b, int op)
 {
     dihedral* d1 = (dihedral*) a;
@@ -145,7 +174,7 @@ static PyNumberMethods dihedral_as_number = {
     /* nb_reserved */             0,                  // reserved / legacy
     /* nb_float */                0,                  // float(a) / __float__
 
-    /* nb_inplace_add */          0,       // a += b
+    /* nb_inplace_add */          PyDihedral_add,       // a += b
     /* nb_inplace_subtract */     0,       // a -= b
     /* nb_inplace_multiply */     0,       // a *= b
     /* nb_inplace_remainder */    0,                  // a %= b
@@ -178,7 +207,7 @@ PyTypeObject dihedralType = {
     0,                               // tp_setattr
     0,                               // tp_reserved / tp_compare
     (reprfunc)dihedral_str,         // tp_repr
-    &dihedral_as_number,                               // tp_as_number
+    &dihedral_as_number,              // tp_as_number
     0,                               // tp_as_sequence
     0,                               // tp_as_mapping
     0,                               // tp_hash
