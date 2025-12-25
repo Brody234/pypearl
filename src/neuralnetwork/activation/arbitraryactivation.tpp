@@ -2,8 +2,6 @@
 #define ArbitraryActivation_TPP
 
 #include "arbitraryactivation.hpp"
-#include "../../matrix/matrix.hpp"
-#include <cstdint>
 
 // This file in it's current state requires heavy optimization. The overall theme is efficiency and actual number of instructions ran is more important than size of binary hence the use of if else statements with copied code over macros.
 
@@ -275,7 +273,6 @@ ndarray* activationForward(ndarray* inputs, ActivationLayer& layer){
     if(layer.type == 0x6){
 
         if(inputs->dtype == 0x0){
-            std::cout << "HERE" << std::endl;
             float temp;
             for(size_t i = 0; i < inputs->dims[0]; i++){
                 for(size_t j = 0; j < inputs->dims[1]; j++){

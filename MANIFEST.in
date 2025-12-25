@@ -1,9 +1,9 @@
 # MANIFEST.in
 
 # include all your headers and sources under src/matrix
-recursive-include src/matrix *.hpp *.tpp *.ipp
-recursive-include src/neuralnetwork *.hpp *.tpp *.ipp
-recursive-include src/utilities *.hpp *.tpp *.ipp
+recursive-include src/matrix *.hpp *.tpp *.ipp *.cpp
+recursive-include src/neuralnetwork *.hpp *.tpp *.ipp *.cpp
+recursive-include src/utilities *.hpp *.tpp *.ipp *.cpp
 
 # include your binding sources
 recursive-include src/pybinding *.cpp *.hpp

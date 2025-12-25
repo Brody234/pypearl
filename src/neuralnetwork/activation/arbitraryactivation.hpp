@@ -1,9 +1,9 @@
 #ifndef ArbitraryActivation_HPP
 #define ArbitraryActivation_HPP
 
-#include "../../matrix/matrix.hpp"
 #include "../../matrix/structures/ndarray.hpp"
 #include <cstdint>
+
 
 
 struct ActivationLayer {

@@ -31,6 +31,8 @@ extern "C" {
  * I kinda couldn't decide between camal case and underscores for var names because I was simulataneously thinking in Python and C.
  * Also has anyone else ever noticed some words look better in camel case and some look better with underscore.
  * 
+ * As useless as this may seem, being able to explain this array object got me through my last round on a data science interview so 
+ * that's cool.
  */ 
 
 /*
@@ -85,6 +87,7 @@ extern PyTypeObject ndarrayType;
 
 // C Functions
 ndarray* arrayCInit(size_t nd, u_int8_t dtype, size_t* dims);
+ndarray* arrayCInitCopy(ndarray* other);
 ndarray* arrayScalarCInit(void* value, u_int8_t dtype);
 ndarray* arrayCViewCreate(ndarray* old);
 void ndincref(ndarray* self);

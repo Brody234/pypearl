@@ -1,4 +1,4 @@
-#include "ndarray.h"
+#include "ndarray.hpp"
 
 int main(){
     size_t* dims;

@@ -883,6 +883,49 @@ static PyMappingMethods ndarray_as_mapping = {
     .mp_ass_subscript = ndarray_ass_subscript,
 };
 
+static PyNumberMethods ndarray_as_number = {
+    /* nb_add */                  PyNDArray_add_new,        // a + b
+    /* nb_subtract */             PyNDArray_sub_new,   // a - b
+    /* nb_multiply */             PyNDArray_mult_new,   // a * b
+    /* nb_remainder */            0,                  // a % b
+    /* nb_divmod */               0,                  // divmod(a, b)
+    /* nb_power */                0,                  // a ** b
+    /* nb_negative */             0,   // -a
+    /* nb_positive */             0,                  // +a
+    /* nb_absolute */             0,                  // abs(a)
+    /* nb_bool */                 0,                  // bool(a)
+    /* nb_invert */               0,                  // ~a
+    /* nb_lshift */               0,                  // a << b
+    /* nb_rshift */               0,                  // a >> b
+    /* nb_and */                  0,                  // a & b
+    /* nb_xor */                  0,                  // a ^ b
+    /* nb_or */                   0,                  // a | b
+    /* nb_int */                  0,                  // int(a) / __int__
+    /* nb_reserved */             0,                  // reserved / legacy
+    /* nb_float */                0,                  // float(a) / __float__
+
+    /* nb_inplace_add */          PyNDArray_add,       // a += b
+    /* nb_inplace_subtract */     PyNDArray_sub,       // a -= b
+    /* nb_inplace_multiply */     PyNDArray_mult,       // a *= b
+    /* nb_inplace_remainder */    0,                  // a %= b
+    /* nb_inplace_power */        0,                  // a **= b
+    /* nb_inplace_lshift */       0,                  // a <<= b
+    /* nb_inplace_rshift */       0,                  // a >>= b
+    /* nb_inplace_and */          0,                  // a &= b
+    /* nb_inplace_xor */          0,                  // a ^= b
+    /* nb_inplace_or */           0,                  // a |= b
+
+    /* nb_floor_divide */         0,                  // a // b
+    /* nb_true_divide */          PyNDArray_div_new,    // a / b
+    /* nb_inplace_floor_divide */ 0,                  // a //= b
+    /* nb_inplace_true_divide */  PyNDArray_div,   // a /= b
+
+    /* nb_index */                0,                  // a.__index__()
+
+    /* nb_matrix_multiply */      0,                  // a @ b
+    /* nb_inplace_matrix_multiply */ 0                // a @= b
+};
+
 PyTypeObject ndarrayType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pypearl.ndarray",               // tp_name
@@ -894,7 +937,7 @@ PyTypeObject ndarrayType = {
     0,                               // tp_setattr
     0,                               // tp_reserved / tp_compare
     (reprfunc)ndarray_str,         // tp_repr
-    0,                               // tp_as_number
+    &ndarray_as_number,                               // tp_as_number
     0,                               // tp_as_sequence
     &ndarray_as_mapping,                               // tp_as_mapping
     0,                               // tp_hash

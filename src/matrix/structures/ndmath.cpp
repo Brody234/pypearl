@@ -9,16 +9,23 @@ extern "C" {
 
 /*
  * Layout of the file:
- * - Helper functions for scalar math
- * - Helper functions for matrix to matrix math
- * - Middle functions for matrix to matrix math (don't do the work but call loops)
- * - Python Functions to be called from Python
+ * - Part 1, Code for modification:
+ * -- Helper functions for scalar math
+ * -- Helper functions for matrix to matrix math
+ * -- Middle functions for matrix to matrix math (don't do the work but call loops)
+ * -- Python Functions to be called from Python
+ * - Part 2, Code for copying:
+ * -- Helper functions for scalar math
  * 
  * None of the functions here are not supposed to be extremely efficient,
  *      as it just doesn't really matter. All this stuff is O(n) where n is 
  *      number of dims.
  */
 
+/*
+ * Part 1: Functions that Write to Original Matrix
+ * Think +=, yes in Python + is an operator independent of +=
+ */
 
 /*
  * SECTION 1: Matrix/Scalar Helper functions
@@ -370,19 +377,26 @@ void ndarray_div_array(ndarray* self, ndarray* other){
 }
 
 /*
- * SECTION 3: Python Functions
+ * SECTION 4: Python Functions
  * write to original matrix
  */
 
 
-static PyObject* PyNDArray_add(ndarray *self, PyObject *arg){
+static PyObject* PyNDArray_add(PyObject *Pyself, PyObject *arg){
+    ndarray* self = (ndarray*)Pyself;
 
     if (PyObject_TypeCheck(arg, &ndarrayType)) {
         ndarray *other = (ndarray *)arg;
         ndarray_add_array(self, other);
-        Py_RETURN_NONE;
+        self->refs[0]+=1;
+        Py_IncRef(Pyself);
+
+        return Pyself;
     }
 
+    if(PyErr_Occurred()){
+        return NULL;
+    }
 
     PyObject *float_obj = PyNumber_Float(arg);
     if (float_obj == NULL) {
@@ -398,11 +412,26 @@ static PyObject* PyNDArray_add(ndarray *self, PyObject *arg){
     }
 
     ndForeachED(self, ndadd, val);
-
-    Py_RETURN_NONE;
+    self->refs[0]+=1;
+    Py_IncRef(Pyself);
+    return Pyself;
 }
 
-static PyObject* PyNDArray_sub(ndarray *self, PyObject *arg){
+static PyObject* PyNDArray_sub(PyObject *Pyself, PyObject *arg){
+    ndarray* self = (ndarray*)Pyself;
+
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_sub_array(self, other);
+        self->refs[0]+=1;
+        Py_IncRef(Pyself);
+
+        return Pyself;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
 
     PyObject *float_obj = PyNumber_Float(arg);
     if (float_obj == NULL) {
@@ -418,11 +447,27 @@ static PyObject* PyNDArray_sub(ndarray *self, PyObject *arg){
     }
 
     ndForeachED(self, ndsub, val);
+    self->refs[0]+=1;
+    Py_IncRef(Pyself);
 
-    Py_RETURN_NONE;
+    return Pyself;
 }
 
-static PyObject* PyNDArray_mult(ndarray *self, PyObject *arg){
+static PyObject* PyNDArray_mult(PyObject *Pyself, PyObject *arg){
+    ndarray* self = (ndarray*)Pyself;
+
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_mult_array(self, other);
+        self->refs[0]+=1;
+        Py_IncRef(Pyself);
+
+        return Pyself;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
 
     PyObject *float_obj = PyNumber_Float(arg);
     if (float_obj == NULL) {
@@ -438,11 +483,31 @@ static PyObject* PyNDArray_mult(ndarray *self, PyObject *arg){
     }
 
     ndForeachED(self, ndmult, val);
+    self->refs[0]+=1;
+    Py_IncRef(Pyself);
 
-    Py_RETURN_NONE;
+    return Pyself;
 }
 
-static PyObject* PyNDArray_div(ndarray *self, PyObject *arg){
+static PyObject* PyNDArray_div(PyObject *Pyself, PyObject *arg){
+    ndarray* self = (ndarray*)Pyself;
+
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_div_array(self, other);
+        if(PyErr_Occurred()){
+            return NULL;
+        }
+
+        self->refs[0]+=1;
+        Py_IncRef(Pyself);
+
+        return Pyself;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
 
     PyObject *float_obj = PyNumber_Float(arg);
     if (float_obj == NULL) {
@@ -463,8 +528,164 @@ static PyObject* PyNDArray_div(ndarray *self, PyObject *arg){
     }
 
     ndForeachED(self, nddiv, val);
+    self->refs[0]+=1;
+    Py_IncRef(Pyself);
 
-    Py_RETURN_NONE;
+    return Pyself;
+}
+
+/*
+ * Part 2: Functions that Write to a Copy
+ * Think +, -, etc.
+ * 
+ * This section gave me a little bit of an algorithmic internal debate. Some quick mental math says
+ * implementing the functions of this section in the format c = a + b, where the new matrix has one
+ * assigment seems more efficient than c = a, c += b, as it takes an extra binary operation. However,
+ * I'm also thinking that on a really large a and b, having to cache, A, B and C all at once rather
+ * than just C and either A or B will likely be less memory intensive. Since the latter option lets
+ * me use my previous code and I should be studying for exams, I'm gonna do that. If anyone ever tests
+ * speed differences between the two implementations, let me know.
+ */
+
+/*
+ * SECTION 5: Python Functions
+ * write to a new matrix
+ */
+static PyObject* PyNDArray_add_new(PyObject *Pyself, PyObject *arg){
+    ndarray* self = arrayCInitCopy( (ndarray* )Pyself);
+
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_add_array(self, other);
+
+        return (PyObject*) self;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
+
+    PyObject *float_obj = PyNumber_Float(arg);
+    if (float_obj == NULL) {
+        PyErr_SetString(PyExc_TypeError, "expected int or float");
+        return NULL;
+    }
+
+    double val = PyFloat_AsDouble(float_obj);
+    Py_DECREF(float_obj);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    ndForeachED(self, ndadd, val);
+
+    return (PyObject*) self;
+}
+
+static PyObject* PyNDArray_sub_new(PyObject *Pyself, PyObject *arg){
+    ndarray* self = arrayCInitCopy( (ndarray* )Pyself);
+
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_sub_array(self, other);
+        return (PyObject*) self;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
+
+    PyObject *float_obj = PyNumber_Float(arg);
+    if (float_obj == NULL) {
+        PyErr_SetString(PyExc_TypeError, "expected int or float");
+        return NULL;
+    }
+
+    double val = PyFloat_AsDouble(float_obj);
+    Py_DECREF(float_obj);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    ndForeachED(self, ndsub, val);
+    return (PyObject*) self;
+}
+
+static PyObject* PyNDArray_mult_new(PyObject *Pyself, PyObject *arg){
+    ndarray* self = arrayCInitCopy( (ndarray* )Pyself);
+
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_mult_array(self, other);
+        self->refs[0]+=1;
+        Py_IncRef(Pyself);
+
+        return (PyObject*) self;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
+
+    PyObject *float_obj = PyNumber_Float(arg);
+    if (float_obj == NULL) {
+        PyErr_SetString(PyExc_TypeError, "expected int or float");
+        return NULL;
+    }
+
+    double val = PyFloat_AsDouble(float_obj);
+    Py_DECREF(float_obj);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    ndForeachED(self, ndmult, val);
+    self->refs[0]+=1;
+    Py_IncRef(Pyself);
+
+    return (PyObject*) self;
+}
+
+static PyObject* PyNDArray_div_new(PyObject *Pyself, PyObject *arg){
+    ndarray* self = arrayCInitCopy( (ndarray* )Pyself);
+    
+    if (PyObject_TypeCheck(arg, &ndarrayType)) {
+        ndarray *other = (ndarray *)arg;
+        ndarray_div_array(self, other);
+        if(PyErr_Occurred()){
+            return NULL;
+        }
+        return (PyObject*) self;
+    }
+
+    if(PyErr_Occurred()){
+        return NULL;
+    }
+
+    PyObject *float_obj = PyNumber_Float(arg);
+    if (float_obj == NULL) {
+        PyErr_SetString(PyExc_TypeError, "expected int or float");
+        return NULL;
+    }
+
+    double val = PyFloat_AsDouble(float_obj);
+    Py_DECREF(float_obj);
+
+    if(val == 0.0){
+        PyErr_SetString(PyExc_TypeError, "cannot divide by 0");
+        return NULL;
+    }
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    ndForeachED(self, nddiv, val);
+    
+    return (PyObject*) self;
 }
 
 #ifdef __cplusplus
