@@ -4,8 +4,7 @@
 #include "dihedral.hpp"
 
 static void dihedral_dealloc(dihedral *self)
-{
-
+{    
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 

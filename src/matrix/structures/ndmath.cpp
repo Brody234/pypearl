@@ -14,8 +14,12 @@ extern "C" {
  * -- Helper functions for matrix to matrix math
  * -- Middle functions for matrix to matrix math (don't do the work but call loops)
  * -- Python Functions to be called from Python
+ * 
  * - Part 2, Code for copying:
  * -- Helper functions for scalar math
+ * 
+ * - Part 3, Code for Boolean Math
+ * -- Array Equality
  * 
  * None of the functions here are not supposed to be extremely efficient,
  *      as it just doesn't really matter. All this stuff is O(n) where n is 
@@ -687,6 +691,54 @@ static PyObject* PyNDArray_div_new(PyObject *Pyself, PyObject *arg){
     
     return (PyObject*) self;
 }
+
+/*
+ * Part 3: Boolean
+ */
+
+// Array Equality
+bool PyNDArray_equal(ndarray* a, ndarray* b){
+    if(a->nd != b->nd){
+        return false;
+    }
+    for(size_t i = 0; i< a->nd; i++){
+        if(a->dims[i] != b->dims[i]){
+            return false;
+        }
+    }
+
+    char* cur_elem = a->data;
+    char* other_elem = b->data;
+    
+    // I inlined
+    size_t* cur_idx = (size_t*)malloc(a->nd*sizeof(size_t));
+    for(size_t i = 0; i < a->nd; i++) cur_idx[i] = 0;
+
+    for(;;){
+        if(((long*)cur_elem)[0]!=((long*)other_elem)[0]){
+            free(cur_idx);
+            return false;
+        }
+        for(ssize_t k = (ssize_t)a->nd-1; k >=0; k--){
+            cur_idx[k]++;
+            cur_elem += a->strides[k];
+            other_elem += b->strides[k];
+
+            if(cur_idx[k] < a->dims[k]){
+                goto next_element;
+            }
+            cur_elem -= a->strides[k] * a->dims[k];
+            other_elem -= b->strides[k] * b->dims[k];
+            cur_idx[k] = 0;
+        }
+        break;
+        next_element:
+        ;
+    }
+
+    return true;
+}
+
 
 #ifdef __cplusplus
 }

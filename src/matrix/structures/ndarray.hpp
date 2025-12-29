@@ -66,13 +66,14 @@ typedef struct {
 typedef void (*func)(void* elem, const size_t* idx, size_t nd);
 typedef void (*funcED)(void* elem, uint8_t dtype, double val);
 typedef void (*funcND2)(void* elem, void* other, uint8_t dtype);
-
+typedef void (*funcEDL)(void* elem, uint8_t dtype, long val);
 void zero4(void* elem, const size_t* idx, size_t nd);
 void zero8(void* elem, const size_t* idx, size_t nd);
 
 void ndForeach(ndarray* arr, func visit);
 void ndForeachED(ndarray* arr, funcED visit, double val);
 void ndForeachND(ndarray* arr, ndarray* other, funcND2 visit);
+void ndForeachEDL(ndarray* arr, funcEDL visit, long val);
 
 void ndPrint(ndarray* arr);
 
@@ -121,6 +122,8 @@ void fastMultFloat64(ndarray* arr, size_t i, size_t j, double val);
 
 ndarray* transpose(ndarray* self);
 void GEMM(ndarray* A, ndarray* B, ndarray* C, ndarray* alpha, ndarray* beta);
+
+bool PyNDArray_equal(ndarray* a, ndarray* b);
 
 // Math
 

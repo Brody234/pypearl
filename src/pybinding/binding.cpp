@@ -8,7 +8,8 @@
 #include "neuralnetwork/optimizer/arbitraryoptimizer.hpp"
 #include "abstract/groups/dihedral.hpp"
 #include "abstract/groups/znz.hpp"
-
+#include "abstract/groups/dihedral_matrix.hpp"
+#include "abstract/groups/symmetric.hpp"
 
 PyObject* add(PyObject *self, PyObject *args){
     int x;
@@ -169,6 +170,36 @@ PyInit__pypearl(void)
     if (result < 0) {
         PyErr_Print();  // Print any Python exception
         Py_DECREF(&znzType);
+        Py_DECREF(m);
+        return NULL;
+    }
+    
+    if (PyType_Ready(&dihedral_matrixType) < 0) {
+        PyErr_Print();  // Print the actual error
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&dihedral_matrixType);
+
+    result = PyModule_AddObject(m, "DihedralTensor", (PyObject*)&dihedral_matrixType);
+    if (result < 0) {
+        PyErr_Print();  // Print any Python exception
+        Py_DECREF(&dihedral_matrixType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    if (PyType_Ready(&symmetricType) < 0) {
+        PyErr_Print();  // Print the actual error
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&symmetricType);
+
+    result = PyModule_AddObject(m, "Symmetric", (PyObject*)&symmetricType);
+    if (result < 0) {
+        PyErr_Print();  // Print any Python exception
+        Py_DECREF(&symmetricType);
         Py_DECREF(m);
         return NULL;
     }

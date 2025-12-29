@@ -123,6 +123,20 @@ class Dihedral:
     @property
     def n(self): int
 
+class DihedralTensor:
+    def __init__(self, s: ndarray, n: int, r: ndarray) -> None: ...
+    def __add__(self, other: DihedralTensor) -> DihedralTensor: ...
+    def __radd__(self, other: DihedralTensor) -> DihedralTensor: ...
+
+    @property
+    def s(self): ndarray
+    @property
+    def r(self): ndarray
+    @property
+    def n(self): int
+
+
+
 class ZNZ:
     def __init__(self, n: int, rep: int) -> None: ...
     def __add__(self, other: ZNZ) -> ZNZ: ...
@@ -132,6 +146,17 @@ class ZNZ:
     def rep(self): int
     @property
     def n(self): int
+
+class Symmetric:
+    def __init__(self, n: int, ordering: ndarray) -> None: ...
+    def __add__(self, other: Symmetric) -> Symmetric: ...
+    def __radd__(self, other: Symmetric) -> Symmetric: ...
+
+    @property
+    def ordering(self): int
+    @property
+    def n(self): int
+
 
 
 def breed_models(model1: Model, model2: Model, prop: float) -> Model: ...

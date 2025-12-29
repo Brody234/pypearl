@@ -27,7 +27,7 @@ extern PyMethodDef znz_methods[];
 extern PyTypeObject znzType;
 
 // Methods
-znz* znzCInit(uint64_t r, uint64_t n, uint8_t s);
+znz* znzCInit(int64_t val, int64_t n);
 static PyObject* Pyznz_add_new(PyObject *Pyself, PyObject *arg);
 
 #include "znz.cpp"

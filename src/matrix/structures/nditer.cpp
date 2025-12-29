@@ -38,6 +38,8 @@ void ndForeach(ndarray* arr, func visit){
         next_element:
         ;
     }
+        free(cur_idx);
+
 }
 
 // For each for element and dtype
@@ -63,6 +65,35 @@ void ndForeachED(ndarray* arr, funcED visit, double val){
         next_element:
         ;
     }
+        free(cur_idx);
+
+}
+
+// For each for element and dtype, long
+void ndForeachEDL(ndarray* arr, funcEDL visit, long val){
+    char* cur_elem = arr->data;
+    
+    size_t* cur_idx = (size_t*)malloc(arr->nd*sizeof(size_t));
+    for(size_t i = 0; i < arr->nd; i++) cur_idx[i] = 0;
+
+    for(;;){
+        (*visit)(cur_elem, arr->dtype, val);
+        for(ssize_t k = (ssize_t)arr->nd-1; k >=0; k--){
+            cur_idx[k]++;
+            cur_elem+=arr->strides[k];
+
+            if(cur_idx[k]<arr->dims[k]){
+                goto next_element;
+            }
+            cur_elem -= arr->strides[k]*arr->dims[k];
+            cur_idx[k] = 0;
+        }
+        break;
+        next_element:
+        ;
+    }
+    free(cur_idx);
+
 }
 
 void ndForeachND(ndarray* arr, ndarray* other, funcND2 visit){
@@ -90,6 +121,7 @@ void ndForeachND(ndarray* arr, ndarray* other, funcND2 visit){
         next_element:
         ;
     }
+    free(cur_idx);
 }
 
 #ifdef __cplusplus

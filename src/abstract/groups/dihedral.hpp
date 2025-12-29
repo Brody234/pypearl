@@ -27,7 +27,7 @@ extern PyMethodDef dihedral_methods[];
 extern PyTypeObject dihedralType;
 
 // Methods
-dihedral* dihedralCInit(uint64_t r, uint64_t n, uint8_t s);
+dihedral* dihedralCInit(int64_t r, int64_t n, int64_t s);
 static PyObject* PyDihedral_add_new(PyObject *Pyself, PyObject *arg);
 
 #include "dihedral.cpp"
