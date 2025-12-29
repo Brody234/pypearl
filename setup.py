@@ -86,7 +86,7 @@ ext_modules = [
 
 setup(
     name="pypearl",
-    version="0.7.9",
+    version="0.7.10",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
     description="An efficient Machine Learning Library",

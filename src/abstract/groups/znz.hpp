@@ -1,7 +1,7 @@
 #ifndef ZNZGROUP
 #define ZNZGROUP
 
-// Cyclic Groups of Order n
+// Basic Cyclic Groups of Order n
 
 #include <Python.h> 
 #include <structmember.h> 

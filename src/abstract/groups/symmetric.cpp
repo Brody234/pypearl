@@ -72,6 +72,26 @@ static int symmetric_init(symmetric *self, PyObject *args, PyObject *kwds){
         return -1;
     }
     ndarray* arr = arrayCInitCopy((ndarray*) val);
+    long check[arr->dims[0]];
+    for(long i = 0; i < arr->dims[0]; i++){
+        check[i] = 1;
+    }
+    long temp;
+    for(size_t i = 0; i < arr->dims[0]; i++){
+        fastGet1D8Index(arr, i, &temp);
+        if(temp >= arr->dims[0] || temp < 0){
+            PyErr_SetString(PyExc_TypeError, "Array contains out of bounds elements.");
+            return -1;
+        }
+        check[temp] = 0;
+    }
+
+    for(long i = 0; i < arr->dims[0]; i++){
+        if(check[i] != 0){
+            PyErr_SetString(PyExc_TypeError, "Array not a surjective. Make sure to go from 0 to n-1, not 1 to n.");
+            return -1;
+        }
+    }
 
     self->n = arr->dims[0];
     self->ordering = arr;
