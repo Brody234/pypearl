@@ -54,6 +54,15 @@ znz* znzCInit(int64_t val, int64_t n){
 }
 
 static PyObject* Pyznz_add_new(PyObject *a, PyObject *b){
+    if(!PyObject_TypeCheck(a, &znzType)){
+        PyErr_SetString(PyExc_TypeError, "First element must be a cyclic group of format Z/nZ.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &znzType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be cyclic groups of format Z/nZ.");
+        return NULL;
+    }
+
     znz* z1 = (znz*) a;
     znz* z2 = (znz*) b;
 
@@ -72,6 +81,15 @@ static PyObject* Pyznz_add_new(PyObject *a, PyObject *b){
 }
 
 static PyObject* Pyznz_add(PyObject *a, PyObject *b){
+    if(!PyObject_TypeCheck(a, &znzType)){
+        PyErr_SetString(PyExc_TypeError, "First element must be a cyclic group of format Z/nZ.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &znzType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be cyclic groups of format Z/nZ.");
+        return NULL;
+    }
+
     znz* z1 = (znz*) a;
     znz* z2 = (znz*) b;
 
@@ -89,6 +107,15 @@ static PyObject* Pyznz_add(PyObject *a, PyObject *b){
 
 static PyObject* Pyznz_richcompare(PyObject* a, PyObject* b, int op)
 {
+    if(!PyObject_TypeCheck(a, &znzType)){
+        PyErr_SetString(PyExc_TypeError, "First element must be a cyclic group of format Z/nZ.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &znzType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be cyclic groups of format Z/nZ.");
+        return NULL;
+    }
+
     znz* z1 = (znz*) a;
     znz* z2 = (znz*) b;
 

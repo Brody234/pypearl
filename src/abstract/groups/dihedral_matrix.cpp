@@ -175,6 +175,15 @@ void dihedral_add_helper(dihedral_matrix* d1, dihedral_matrix* d2){
 }
 
 static PyObject* PyDihedral_Matrix_add_new(PyObject *a, PyObject *b){
+    if(!PyObject_TypeCheck(a, &dihedral_matrixType)){
+        PyErr_SetString(PyExc_TypeError, "First element must be a dihedral tensor.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &dihedral_matrixType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral tensors.");
+        return NULL;
+    }
+
     dihedral_matrix* d1 = (dihedral_matrix*) a;
     dihedral_matrix* d2 = (dihedral_matrix*) b;
 
@@ -217,6 +226,15 @@ static PyObject* PyDihedral_Matrix_add_new(PyObject *a, PyObject *b){
 }
 
 static PyObject* PyDihedral_Matrix_add(PyObject *a, PyObject *b){
+    if(!PyObject_TypeCheck(a, &dihedral_matrixType)){
+        PyErr_SetString(PyExc_TypeError, "First element must be a dihedral tensor.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &dihedral_matrixType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral tensors.");
+        return NULL;
+    }
+
     dihedral_matrix* d1 = (dihedral_matrix*) a;
     dihedral_matrix* d2 = (dihedral_matrix*) b;
 
@@ -257,6 +275,15 @@ static PyObject* PyDihedral_Matrix_add(PyObject *a, PyObject *b){
 
 static PyObject* PyDihedral_Matrix_richcompare(PyObject* a, PyObject* b, int op)
 {
+    if(!PyObject_TypeCheck(a, &dihedral_matrixType)){
+        PyErr_SetString(PyExc_TypeError, "First element must be a dihedral tensor.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &dihedral_matrixType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral tensors.");
+        return NULL;
+    }
+
     dihedral_matrix* d1 = (dihedral_matrix*) a;
     dihedral_matrix* d2 = (dihedral_matrix*) b;
 

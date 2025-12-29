@@ -4,6 +4,6 @@
 #include <cstddef>
 #include <Python.h> 
 
-size_t* tuple_to_size_t_arr(PyObject* tuple);
+int tuple_to_size_t_arr(PyObject* tuple, size_t* size, size_t* vals);
 #include "volume1.cpp"
 #endif

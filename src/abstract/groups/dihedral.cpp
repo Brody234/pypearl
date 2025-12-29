@@ -62,9 +62,19 @@ dihedral* dihedralCInit(int64_t r, int64_t n, int64_t s){
     return self;
 }
 
-static PyObject* PyDihedral_add_new(PyObject *Pyself, PyObject *arg){
-    dihedral* d1 = (dihedral*) Pyself;
-    dihedral* d2 = (dihedral*) arg;
+static PyObject* PyDihedral_add_new(PyObject *a, PyObject *b){
+    if(!PyObject_TypeCheck(a, &dihedralType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &dihedralType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral.");
+        return NULL;
+    }
+
+    
+    dihedral* d1 = (dihedral*) a;
+    dihedral* d2 = (dihedral*) b;
 
 
     if(d1->n != d2->n){
@@ -89,9 +99,18 @@ static PyObject* PyDihedral_add_new(PyObject *Pyself, PyObject *arg){
     return (PyObject*) self;
 }
 
-static PyObject* PyDihedral_add(PyObject *Pyself, PyObject *arg){
-    dihedral* d1 = (dihedral*) Pyself;
-    dihedral* d2 = (dihedral*) arg;
+static PyObject* PyDihedral_add(PyObject *a, PyObject *b){
+    if(!PyObject_TypeCheck(a, &dihedralType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &dihedralType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral.");
+        return NULL;
+    }
+
+    dihedral* d1 = (dihedral*) a;
+    dihedral* d2 = (dihedral*) b;
 
 
     if(d1->n != d2->n){
@@ -120,6 +139,15 @@ static PyObject* PyDihedral_add(PyObject *Pyself, PyObject *arg){
 
 static PyObject* PyDihedral_richcompare(PyObject* a, PyObject* b, int op)
 {
+    if(!PyObject_TypeCheck(a, &dihedralType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral.");
+        return NULL;
+    }
+    if(!PyObject_TypeCheck(b, &dihedralType)){
+        PyErr_SetString(PyExc_TypeError, "Both elements must be dihedral.");
+        return NULL;
+    }
+
     dihedral* d1 = (dihedral*) a;
     dihedral* d2 = (dihedral*) b;
 

@@ -28,7 +28,11 @@ extern PyTypeObject dihedralType;
 
 // Methods
 dihedral* dihedralCInit(int64_t r, int64_t n, int64_t s);
-static PyObject* PyDihedral_add_new(PyObject *Pyself, PyObject *arg);
+
+// Python Facing Methods
+static PyObject* PyDihedral_add_new(PyObject *a, PyObject *b);
+static PyObject* PyDihedral_add(PyObject *a, PyObject *b);
+static PyObject* PyDihedral_richcompare(PyObject* a, PyObject* b, int op);
 
 #include "dihedral.cpp"
 

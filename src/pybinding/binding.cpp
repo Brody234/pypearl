@@ -10,6 +10,7 @@
 #include "abstract/groups/znz.hpp"
 #include "abstract/groups/dihedral_matrix.hpp"
 #include "abstract/groups/symmetric.hpp"
+#include "abstract/groups/directproduct.hpp"
 
 PyObject* add(PyObject *self, PyObject *args){
     int x;
@@ -145,7 +146,7 @@ PyInit__pypearl(void)
 
     // Abstract Algebra
     if (PyType_Ready(&dihedralType) < 0) {
-        PyErr_Print();  // Print the actual error
+        PyErr_Print(); 
         Py_DECREF(m); 
         return NULL;
     }
@@ -153,14 +154,14 @@ PyInit__pypearl(void)
 
     int result = PyModule_AddObject(m, "Dihedral", (PyObject*)&dihedralType);
     if (result < 0) {
-        PyErr_Print();  // Print any Python exception
+        PyErr_Print();  
         Py_DECREF(&dihedralType);
         Py_DECREF(m);
         return NULL;
     }
 
     if (PyType_Ready(&znzType) < 0) {
-        PyErr_Print();  // Print the actual error
+        PyErr_Print();
         Py_DECREF(m); 
         return NULL;
     }
@@ -168,14 +169,14 @@ PyInit__pypearl(void)
 
     result = PyModule_AddObject(m, "ZNZ", (PyObject*)&znzType);
     if (result < 0) {
-        PyErr_Print();  // Print any Python exception
+        PyErr_Print();
         Py_DECREF(&znzType);
         Py_DECREF(m);
         return NULL;
     }
     
     if (PyType_Ready(&dihedral_matrixType) < 0) {
-        PyErr_Print();  // Print the actual error
+        PyErr_Print();
         Py_DECREF(m); 
         return NULL;
     }
@@ -183,14 +184,14 @@ PyInit__pypearl(void)
 
     result = PyModule_AddObject(m, "DihedralTensor", (PyObject*)&dihedral_matrixType);
     if (result < 0) {
-        PyErr_Print();  // Print any Python exception
+        PyErr_Print();
         Py_DECREF(&dihedral_matrixType);
         Py_DECREF(m);
         return NULL;
     }
 
     if (PyType_Ready(&symmetricType) < 0) {
-        PyErr_Print();  // Print the actual error
+        PyErr_Print();  
         Py_DECREF(m); 
         return NULL;
     }
@@ -198,12 +199,26 @@ PyInit__pypearl(void)
 
     result = PyModule_AddObject(m, "Symmetric", (PyObject*)&symmetricType);
     if (result < 0) {
-        PyErr_Print();  // Print any Python exception
+        PyErr_Print();  
         Py_DECREF(&symmetricType);
         Py_DECREF(m);
         return NULL;
     }
 
+    if (PyType_Ready(&directType) < 0) {
+        PyErr_Print();
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&directType);
+
+    result = PyModule_AddObject(m, "DirectProduct", (PyObject*)&directType);
+    if (result < 0) {
+        PyErr_Print(); 
+        Py_DECREF(&directType);
+        Py_DECREF(m);
+        return NULL;
+    }
 
 
     return m; 
