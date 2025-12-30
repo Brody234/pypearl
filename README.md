@@ -9,6 +9,7 @@ My name is Brody and as of now I am the only maintainer of PyPearl. I plan to ev
 PyPearl is built out of a series of "sub libraries", each of which could be their own small library. I will describe these at a high level here, refer to the docs folder in the source code for deeper explanations.
 
 Source code: https://github.com/Brody234/pypearl
+
 PyPi: https://pypi.org/project/pypearl/ 
 
 ## ndarray
