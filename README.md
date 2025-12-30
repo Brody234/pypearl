@@ -48,7 +48,10 @@ This sublibrarys gives access to the following groups:
 - Dihedral Tensor: Dihedral groups of a fixed n, put into a tensor under addition. Basically just a direct product over a bunch of dihedral groups.
 - Direct Product: Any arbitrary direct product between any other groups in this library.
 
+## PyPearl Status
 
-PyPearl is currently in development. PyPearl can most basic neural network use cases, and is somewhat well optimized for small models. In extremely small cases it out performs PyTorch due to it's nature as a thinner wrapper (exactly 2 lines of Python and 7300+ lines of CPP) compared to PyTorch's 60% Python.
-Here's the source code: https://github.com/Brody234/pypearl
-This description was last edited October 7 2025.
+PyPearl is currently in development and not ready for industry use.
+
+PyPearl can handle most basic neural network use cases, and is somewhat well optimized for small models. In small cases (2 hidden layers, 60 neurons, 900 samples) it out performs PyTorch due to it's nature as a thinner wrapper compared to PyTorch's 60% Python.
+
+This description was last edited December 29, 2025.
