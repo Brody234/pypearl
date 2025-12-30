@@ -6,10 +6,6 @@ I will briefly explain groups here to make it clear what I am talking about as I
 
 While + is conventionally reserved for abelian groups, I want to save * for multiplications in rings and fields, so binary operations between 2 group elements are always + and @ is for group actions. I figured it would be simpler for users, and easier to implement complex functions if everything was by default + on it's base group operation.
 
-## Rules Of Usage
-
-The following defines behavior, both for the understanding of users and the direction of contributors. These rules are forced by the library, so users don't need to keep track of them, but they are good to understand the reasoning for various seemingly annoying behaviors. Group elements are not to be altered directly, in the sense that they will not recieve absolute assignments to their raw data. All assignments, changes, etc. must go through a function that forces the change to obey the rules of the group. For example, no one can ever set dihedral. s = 34, as s is either 0 or 1. For the sake of optimization, redudant assignments are assumed to not exist. Therefore, s = 34, or s^34, which is the same as saying s^0 may be treated as s^1 as s!= 0.
-
 ## Z/nZ
 
 Z/nZ is the equivalence classes under modular arithmetic of the integers, divided by the integers times a scalar n. For example, if n = 20, you get 0..19, with addition defined such that 0+0 = 0, 1+1=2, 10+10=0, 11+10=1. In other words, any two numbers that equal each other modulo 20 are equal in this example.
@@ -41,3 +37,13 @@ Code found in dihedral_matrix.hpp. This is stored as a tensor of dihedral elemen
 Elements are created with DihedralTensor(r=r, s=s, n=n). This is the same as Dihedral, but r and s are now ndarrays of the same shape. Otherwise, everything is exactly the same. This is just an increased efficiency version of direct products as I want to play around with Dihedral based ML models that appeared to me in a dream.
 
 The operators +, += are defined as the group action described above. It is not abelian.
+
+## Direct Product
+
+Code found in directproduct.hpp. This is a group that allows the creation of an arbitrary direct product between any number of groups, allowing for the creation of massive groups.
+
+Elements are constructed with DirectProduct((tuple of group objects)).
+
+## Rules Of Memory and Access
+
+The following defines behavior, both for the understanding of users and the direction of contributors. These rules are forced by the library, so users don't need to keep track of them, but they are good to understand the reasoning for various seemingly annoying behaviors. Group elements are not to be altered directly, in the sense that they will not recieve absolute assignments to their raw data. All assignments, changes, etc. must go through a function that forces the change to obey the rules of the group. For example, no one can ever set dihedral. s = 34, as s is either 0 or 1. For the sake of optimization, redudant assignments are assumed to not exist. Therefore, s = 34, or s^34, which is the same as saying s^0 may be treated as s^1 as s!= 0.

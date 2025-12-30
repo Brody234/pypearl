@@ -89,7 +89,7 @@ setup(
     version="0.7.10",
     author="Brody Massad",
     author_email="brodymassad@gmail.com",
-    description="An efficient Machine Learning Library",
+    description="A library for Machine Learning, Math and Data Science",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     ext_modules=ext_modules,
