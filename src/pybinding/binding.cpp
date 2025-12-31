@@ -12,6 +12,8 @@
 #include "abstract/groups/symmetric.hpp"
 #include "abstract/groups/directproduct.hpp"
 #include "abstract/applied/dihedralneuralnetwork/dihedrallayer.hpp"
+#include "abstract/applied/dihedralneuralnetwork/dihedralactivation.hpp"
+
 
 PyObject* add(PyObject *self, PyObject *args){
     int x;
@@ -234,6 +236,21 @@ PyInit__pypearl(void)
     if (result < 0) {
         PyErr_Print(); 
         Py_DECREF(&dihedral_layerType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    if (PyType_Ready(&dihedral_activationType) < 0) {
+        PyErr_Print();
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&dihedral_activationType);
+
+    result = PyModule_AddObject(m, "DihedralActivation", (PyObject*)&dihedral_activationType);
+    if (result < 0) {
+        PyErr_Print(); 
+        Py_DECREF(&dihedral_activationType);
         Py_DECREF(m);
         return NULL;
     }

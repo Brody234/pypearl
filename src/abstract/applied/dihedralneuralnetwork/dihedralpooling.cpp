@@ -1,0 +1,4 @@
+#ifndef DIHEDRALPOOLING
+#define DIHEDRALPOOLING
+
+#endif

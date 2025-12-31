@@ -115,6 +115,12 @@ void printElemI32(void* elem, const size_t* idx, size_t nd);
 void fastMove2D4(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
 void fastMove2D8(ndarray* in, size_t i, size_t j, ndarray* out, size_t i2, size_t j2);
 
+void fastGet3D4(ndarray* arr, size_t i, size_t j, size_t k, void* out);
+void fastGet3D8(ndarray* arr, size_t i, size_t j, size_t k, void* out);
+void fastSet3D4(ndarray* arr, size_t i, size_t j, size_t k, void* in);
+void fastSet3D8(ndarray* arr, size_t i, size_t j, size_t k, void* in);
+
+
 void fastIncFloat32(ndarray* arr, size_t i, size_t j, float val);
 void fastIncFloat64(ndarray* arr, size_t i, size_t j, double val);
 void fastMultFloat32(ndarray* arr, size_t i, size_t j, float val);

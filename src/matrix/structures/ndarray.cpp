@@ -640,6 +640,26 @@ void fastSet2D8(ndarray* arr, size_t i, size_t j, void* in){
     memcpy(arr->data+arr->strides[0]*i+arr->strides[1]*j, in, 8);
 }
 
+void fastGet3D4(ndarray* arr, size_t i, size_t j, size_t k, void* out){
+    memcpy(out,arr->data+arr->strides[0]*i+arr->strides[1]*j+arr->strides[2]*k, 4);
+}
+
+// Unsafe fast get
+void fastGet3D8(ndarray* arr, size_t i, size_t j, size_t k, void* out){
+    memcpy(out, arr->data+arr->strides[0]*i+arr->strides[1]*j +arr->strides[2]*k, 8);
+}
+
+// Unsafe fast set
+void fastSet3D4(ndarray* arr, size_t i, size_t j, size_t k, void* in){
+    memcpy(arr->data+arr->strides[0]*i+arr->strides[1]*j+arr->strides[2]*k, in, 4);
+}
+
+// Unsafe fast set
+void fastSet3D8(ndarray* arr, size_t i, size_t j, size_t k, void* in){
+    memcpy(arr->data+arr->strides[0]*i+arr->strides[1]*j+arr->strides[2]*k, in, 8);
+}
+
+
 // int32 fast inc
 void fastIncInt32(ndarray arr, size_t i, size_t j, int32_t val){
     int32_t x = (*(int32_t*) (arr.data+arr.strides[0]*i+arr.strides[1]*j));
