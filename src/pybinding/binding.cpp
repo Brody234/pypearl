@@ -13,7 +13,7 @@
 #include "abstract/groups/directproduct.hpp"
 #include "abstract/applied/dihedralneuralnetwork/dihedrallayer.hpp"
 #include "abstract/applied/dihedralneuralnetwork/dihedralactivation.hpp"
-
+#include "abstract/applied/dihedralneuralnetwork/dihedralpooling.hpp"
 
 PyObject* add(PyObject *self, PyObject *args){
     int x;
@@ -251,6 +251,21 @@ PyInit__pypearl(void)
     if (result < 0) {
         PyErr_Print(); 
         Py_DECREF(&dihedral_activationType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    if (PyType_Ready(&dihedral_poolType) < 0) {
+        PyErr_Print();
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&dihedral_poolType);
+
+    result = PyModule_AddObject(m, "DihedralPool", (PyObject*)&dihedral_poolType);
+    if (result < 0) {
+        PyErr_Print(); 
+        Py_DECREF(&dihedral_poolType);
         Py_DECREF(m);
         return NULL;
     }
