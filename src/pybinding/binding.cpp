@@ -14,6 +14,7 @@
 #include "abstract/applied/dihedralneuralnetwork/dihedrallayer.hpp"
 #include "abstract/applied/dihedralneuralnetwork/dihedralactivation.hpp"
 #include "abstract/applied/dihedralneuralnetwork/dihedralpooling.hpp"
+#include "abstract/applied/dihedralneuralnetwork/dihedralpincher.hpp"
 
 PyObject* add(PyObject *self, PyObject *args){
     int x;
@@ -266,6 +267,21 @@ PyInit__pypearl(void)
     if (result < 0) {
         PyErr_Print(); 
         Py_DECREF(&dihedral_poolType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    if (PyType_Ready(&dihedral_pincherType) < 0) {
+        PyErr_Print();
+        Py_DECREF(m); 
+        return NULL;
+    }
+    Py_INCREF(&dihedral_pincherType);
+
+    result = PyModule_AddObject(m, "DihedralPincher", (PyObject*)&dihedral_pincherType);
+    if (result < 0) {
+        PyErr_Print(); 
+        Py_DECREF(&dihedral_pincherType);
         Py_DECREF(m);
         return NULL;
     }

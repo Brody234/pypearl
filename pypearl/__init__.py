@@ -1,4 +1,4 @@
 # pypearl/__init__.py
-from ._pypearl import add, Dense, TestActivation, ReLU, Linear, Sigmoid, LeakyReLU, Step, Softmax, ReverseReLU, ndarray, CCE, GradientDescent, Dihedral, ZNZ, DihedralTensor, Symmetric, DirectProduct, DihedralLayer, DihedralActivation, DihedralPool
-
-__all__ = ["add", "Dense", "TestActivation", "ReLU", "Linear", "Sigmoid", "LeakyReLU", "Step", "Softmax", "ReverseReLU", "ndarray", "CCE", "GradientDescent", "Dihedral", "ZNZ", "DihedralTensor", "Symmetric", "DirectProduct", "DihedralLayer", "DihedralActivation", "DihedralPool"]
+from ._pypearl import add, Dense, TestActivation, ReLU, Linear, Sigmoid, LeakyReLU, Step, Softmax, ReverseReLU, ndarray, CCE, GradientDescent, Dihedral, ZNZ, DihedralTensor, Symmetric, DirectProduct, DihedralLayer, DihedralActivation, DihedralPool, DihedralPincher
+ 
+__all__ = ["add", "Dense", "TestActivation", "ReLU", "Linear", "Sigmoid", "LeakyReLU", "Step", "Softmax", "ReverseReLU", "ndarray", "CCE", "GradientDescent", "Dihedral", "ZNZ", "DihedralTensor", "Symmetric", "DirectProduct", "DihedralLayer", "DihedralActivation", "DihedralPool", "DihedralPincher"]
